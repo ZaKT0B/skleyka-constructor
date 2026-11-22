@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Склейка — конструктор стиля</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Manrope:wght@500;600;700;800&family=Montserrat:wght@800&family=Anton&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #111214);
+    --bg2: var(--tg-theme-secondary-bg-color, #1c1d21);
+    --text: var(--tg-theme-text-color, #f2f2f2);
+    --hint: var(--tg-theme-hint-color, #8b8d93);
+    --btn: var(--tg-theme-button-color, #E2C994);
+    --btn-text: var(--tg-theme-button-text-color, #151515);
+    --line: color-mix(in srgb, var(--text) 12%, transparent);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", Manrope, system-ui, sans-serif; }
+  body { padding-bottom: 96px; }
+  .stage { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 0 8px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid var(--line); }
+  .phone { width: min(43vw, 200px); aspect-ratio: 9 / 16; border-radius: 18px; overflow: hidden; position: relative; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .canvas { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0; overflow: hidden; }
+  .moment { margin-top: 6px; font-size: 12px; color: var(--hint); height: 16px; }
+  .wrap { padding: 4px 14px 0; }
+  h1 { font-size: 20px; margin: 14px 0 2px; }
+  .sub { color: var(--hint); font-size: 13px; margin: 0 0 6px; }
+  .sec { background: var(--bg2); border-radius: 16px; padding: 12px 12px 6px; margin: 12px 0; }
+  .sec h2 { font-size: 15px; margin: 0 0 2px; display: flex; gap: 8px; align-items: center; }
+  .sec p.h { margin: 0 0 8px; color: var(--hint); font-size: 12.5px; }
+  .lbl { font-size: 12.5px; color: var(--hint); margin: 10px 0 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 6px; }
+  .chip { border: 1.5px solid var(--line); background: transparent; color: var(--text); border-radius: 999px; padding: 8px 12px; font: inherit; font-size: 13.5px; cursor: pointer; }
+  .chip.on { border-color: var(--btn); background: color-mix(in srgb, var(--btn) 18%, transparent); font-weight: 600; }
+  .chip small { display: block; font-size: 11px; color: var(--hint); font-weight: 400; }
+  .card { text-align: left; border-radius: 14px; padding: 9px 11px; min-width: calc(50% - 4px); flex: 1 1 calc(50% - 4px); }
+  .sw { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 4px; align-items: center; }
+  .dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; position: relative; }
+  .dot.on { outline: 2.5px solid var(--btn); outline-offset: 2px; }
+  .dot input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+  .dot.custom { background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: 0; }
+  .row b { font-weight: 600; font-size: 14px; } .row span { display: block; color: var(--hint); font-size: 12px; }
+  .tg { width: 46px; height: 28px; border-radius: 14px; background: var(--line); position: relative; flex: none; cursor: pointer; transition: background .2s; }
+  .tg::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: left .2s; }
+  .tg.on { background: var(--btn); } .tg.on::after { left: 21px; }
+  input[type=range] { width: 100%; accent-color: var(--btn); }
+  .presets { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 6px; scrollbar-width: none; }
+  .presets::-webkit-scrollbar { display: none; }
+  .preset { flex: none; border-radius: 14px; padding: 9px 12px; border: 1.5px solid var(--line); background: var(--bg2); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
+  .preset b { display: block; font-size: 13.5px; } .preset small { color: var(--hint); font-size: 11.5px; }
+  .fallback { position: fixed; left: 12px; right: 12px; bottom: 12px; padding: 15px; border-radius: 14px; border: 0; background: var(--btn); color: var(--btn-text); font: 600 16px/1 inherit; display: none; }
+  pre.out { white-space: pre-wrap; word-break: break-all; font-size: 11px; background: var(--bg2); padding: 10px; border-radius: 12px; display: none; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone" id="phone"><div class="canvas" id="cv"></div></div>
+  <div class="moment" id="moment"></div>
+</div>
+
+<div class="wrap">
+  <h1>Свой стиль</h1>
+  <p class="sub">Собери стиль из кусков других стилей. Превью сверху показывает ролик по кругу: хук, субтитры, вставку, переход на тему.</p>
+
+  <div class="lbl">Начать с готового набора</div>
+  <div class="presets" id="presets"></div>
+
+  <div class="sec" id="s-hook"><h2>🪝 Хук</h2><p class="h">Как появляется заголовок в первые секунды.</p><div class="chips" id="hook"></div></div>
+
+  <div class="sec" id="s-color"><h2>🎨 Цвет</h2>
+    <div class="lbl">Основной: фон, плашка</div><div class="sw" id="bg"></div>
+    <div class="lbl">Акцент: главные слова, вторая строка</div><div class="sw" id="acc"></div>
+  </div>
+
+  <div class="sec" id="s-sub"><h2>💬 Субтитры</h2>
+    <div class="lbl">Как появляются</div><div class="chips" id="subanim"></div>
+    <div class="lbl">Шрифт</div><div class="chips" id="font"></div>
+    <div class="lbl">Регистр</div><div class="chips" id="case"></div>
+    <div class="lbl">Цвет текста</div><div class="sw" id="subcolor"></div>
+    <div class="lbl">Размер: <span id="sizev"></span></div><input type="range" id="size" min="0.8" max="1.4" step="0.05">
+  </div>
+
+  <div class="sec" id="s-ins"><h2>🖼 Вставки</h2><p class="h">Фото, видео и 3D-иконки у лица. Иконки всегда вырезаны без рамки.</p>
+    <div class="lbl">Как выглядят</div><div class="chips" id="look"></div>
+    <div class="lbl">Как появляются</div><div class="chips" id="insanim"></div>
+  </div>
+
+  <div class="sec" id="s-topic"><h2>🔀 Переходы на темы</h2><p class="h">Что происходит, когда в речи начинается новая мысль.</p><div class="chips" id="topic"></div></div>
+
+  <div class="sec" id="s-fx"><h2>✨ Фишки</h2><div id="fx"></div></div>
+
+  <pre class="out" id="out"></pre>
+</div>
+<button class="fallback" id="send">Готово</button>
+
+<script>
+const tg = window.Telegram && Telegram.WebApp;
+const inTg = !!(tg && tg.initData);
+
+// ---------- варианты (имена = значения props.cs в Remotion, StyleConstructor.tsx) ----------
+const HOOKS = [
+  ["hybrid", "Цветной фон", "ты в круге, как в Гибриде"],
+  ["plate", "Плашка", "над головой, как в Стандартном"],
+  ["ladder", "Лесенка", "слова ступеньками, как в Минимализме"],
+  ["hand", "От руки", "пишется на глазах, как в Чистом"],
+  ["white", "Белый лист", "ты в арке, как в Белой карточке"],
+  ["type", "Печатная машинка", "буквы по одной на маркере"],
+];
+const TOPICS = [
+  ["hybrid", "Цветной фон", "кадр сжимается в круг или карточку"],
+  ["plate", "Плашки", "заголовок на плашке над головой, как в 1 стиле"],
+  ["white", "Белая карточка", "белый лист, ты в арке, как в 8 стиле"],
+  ["none", "Без переходов", "только субтитры и вставки"],
+];
+const SUBANIM = [["one", "По одному слову"], ["pop", "Выпрыгивают"], ["blur", "Из размытия"], ["karaoke", "Караоке"], ["box", "Слово на маркере"], ["slide", "Строкой снизу"], ["type", "Печатаются"]];
+const FONTS = [
+  ["sf", "SF Pro", "-apple-system, 'SF Pro Text', system-ui, sans-serif", 600, 1],
+  ["sfblack", "SF Pro Black", "-apple-system, 'SF Pro Display', system-ui, sans-serif", 900, 0.95],
+  ["bebas", "Bebas", "'Bebas Neue', sans-serif", 400, 1.35, true],
+  ["manrope", "Manrope", "Manrope, sans-serif", 800, 1],
+  ["cool", "Coolvetica", "Oswald, sans-serif", 500, 1.25],
+  ["druk", "Druk", "Anton, sans-serif", 400, 1.05, true],
+  ["mont", "Montserrat", "Montserrat, sans-serif", 800, 0.9],
+  ["caveat", "Рукописный", "Caveat, cursive", 700, 1.3],
+];
+const CASES = [["lower", "строчные"], ["upper", "КАПС"], ["asis", "Как сказано"]];
+const LOOKS = [["frame", "Белая рамка"], ["cut", "Без рамки"], ["round", "Скруглённые"], ["polaroid", "Полароид"], ["circle", "Круг"]];
+const INSANIM = [["pop", "Выпрыгивает"], ["slide", "Выезжает сбоку"], ["blur", "Из размытия"], ["drop", "Падает сверху"], ["flip", "Переворот"], ["swing", "Качается"]];
+const FX = [
+  ["zoom", "Медленные наезды", "кадр сам приближается и отдаляется"],
+  ["punch", "Резкий наезд", "на главных словах"],
+  ["flash", "Вспышка", "белая вспышка на смене темы"],
+  ["layer", "Карточки из-за кадра", "иконки выезжают на цветном фоне"],
+  ["emoji", "Эмодзи в хуке", "если сценарист его поставил"],
+];
+const BGS = ["#F4EFE6", "#171717", "#E2C994", "#1F6FE0", "#7A1F2B", "#2E5E4A", "#EB549B", "#F2C62A"];
+const ACCS = ["#E2C994", "#F2C62A", "#E67F21", "#2195E6", "#D1261A", "#EB549B", "#5BB85A", "#86EBD0", "#C7A6FF", "#FFFFFF"];
+const SUBCOLORS = ["#F7F2E8", "#FFFFFF", "#F2C62A", "#151515"];
+
+const PRESETS = [
+  ["Как Гибрид", "цветной фон, круг", { hook: "hybrid", topic: "hybrid", bg: "#F4EFE6", acc: "#E2C994", sub: { font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, ins: { look: "frame", anim: "pop" }, fx: { zoom: true, layer: true, emoji: true } }],
+  ["Как Стандартный", "плашки, крупно", { hook: "plate", topic: "plate", bg: "#171717", acc: "#F2C62A", sub: { font: "sfblack", anim: "box", case: "upper", size: 1.05, color: "#FFFFFF" }, ins: { look: "frame", anim: "slide" }, fx: { zoom: true, punch: true } }],
+  ["Как Белая карточка", "белый лист, арка", { hook: "white", topic: "white", bg: "#F4EFE6", acc: "#E5322D", sub: { font: "manrope", anim: "blur", case: "lower", size: 1, color: "#FFFFFF" }, ins: { look: "round", anim: "pop" }, fx: { layer: true } }],
+  ["Как Минимализм", "лесенка, тонко", { hook: "ladder", topic: "none", bg: "#171717", acc: "#E2C994", sub: { font: "sf", anim: "karaoke", case: "lower", size: 0.9, color: "#F7F2E8" }, ins: { look: "cut", anim: "blur" }, fx: { zoom: true } }],
+  ["Как Чистый", "от руки, спокойно", { hook: "hand", topic: "none", bg: "#F4EFE6", acc: "#D6BF9C", sub: { font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, ins: { look: "cut", anim: "blur" }, fx: {} }],
+  ["Микс", "плашка + гибрид + белая", { hook: "plate", topic: "hybrid", bg: "#1F6FE0", acc: "#F2C62A", sub: { font: "bebas", anim: "pop", case: "upper", size: 1.1, color: "#FFFFFF" }, ins: { look: "polaroid", anim: "drop" }, fx: { zoom: true, punch: true, flash: true, layer: true, emoji: true } }],
+];
+
+// ---------- состояние ----------
+const clone = (o) => JSON.parse(JSON.stringify(o));
+let cfg = clone(PRESETS[0][2]);
+try {   // настройки из бота (прошлый свой стиль) или из прошлого раза в этом телефоне
+  const q = new URLSearchParams(location.search).get("cfg");
+  if (q) cfg = Object.assign(cfg, JSON.parse(decodeURIComponent(escape(atob(q.replace(/-/g, "+").replace(/_/g, "/"))))));
+  else { const s = localStorage.getItem("skl_cs"); if (s) cfg = Object.assign(cfg, JSON.parse(s)); }
+} catch (e) {}
+cfg.sub = Object.assign({ font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, cfg.sub || {});
+cfg.ins = Object.assign({ look: "frame", anim: "pop" }, cfg.ins || {});
+cfg.fx = cfg.fx || {};
+
+const $ = (id) => document.getElementById(id);
+const haptic = () => { try { tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged(); } catch (e) {} };
+
+function chips(el, list, get, set, jump, cards) {
+  el.innerHTML = "";
+  list.forEach(([v, name, hint]) => {
+    const b = document.createElement("button");
+    b.className = "chip" + (cards ? " card" : "") + (get() === v ? " on" : "");
+    b.innerHTML = name + (hint ? `<small>${hint}</small>` : "");
+    b.onclick = () => { set(v); haptic(); render(); seek(jump); };
+    el.appendChild(b);
+  });
+}
+function swatches(el, list, get, set, jump) {
+  el.innerHTML = "";
+  const cur = (get() || "").toUpperCase();
+  list.forEach((c) => {
+    const d = document.createElement("div");
+    d.className = "dot" + (cur === c.toUpperCase() ? " on" : "");
+    d.style.background = c;
+    d.onclick = () => { set(c); haptic(); render(); seek(jump); };
+    el.appendChild(d);
+  });
+  const own = document.createElement("div");
+  const isOwn = cur && !list.some((c) => c.toUpperCase() === cur);
+  own.className = "dot custom" + (isOwn ? " on" : "");
+  if (isOwn) own.style.background = cur;
+  own.title = "Свой цвет";
+  const inp = document.createElement("input"); inp.type = "color"; inp.value = cur && cur.length === 7 ? cur : "#888888";
+  inp.oninput = () => { set(inp.value.toUpperCase()); render(false); seek(jump); };
+  own.appendChild(inp); el.appendChild(own);
+}
+function toggles() {
+  const el = $("fx"); el.innerHTML = "";
+  FX.forEach(([k, name, hint]) => {
+    const r = document.createElement("div"); r.className = "row";
+    r.innerHTML = `<div><b>${name}</b><span>${hint}</span></div>`;
+    const t = document.createElement("div"); t.className = "tg" + (cfg.fx[k] ? " on" : "");
+    t.onclick = () => { cfg.fx[k] = !cfg.fx[k]; haptic(); render(); seek({ zoom: 7.5, punch: 3.0, flash: 5.4, layer: 5.6, emoji: 0.9 }[k]); };
+    r.appendChild(t); el.appendChild(r);
+  });
+}
+
+function render(full = true) {
+  const pr = $("presets"); pr.innerHTML = "";
+  PRESETS.forEach(([name, hint, c]) => {
+    const b = document.createElement("button"); b.className = "preset";
+    b.innerHTML = `<b>${name}</b><small>${hint}</small>`;
+    b.onclick = () => { cfg = clone(c); haptic(); render(); seek(0); };
+    pr.appendChild(b);
+  });
+  chips($("hook"), HOOKS, () => cfg.hook, (v) => (cfg.hook = v), 0, true);
+  if (full) { swatches($("bg"), BGS, () => cfg.bg, (v) => (cfg.bg = v), 5.3); swatches($("acc"), ACCS, () => cfg.acc, (v) => (cfg.acc = v), 2.6); swatches($("subcolor"), SUBCOLORS, () => cfg.sub.color, (v) => (cfg.sub.color = v), 2.6); }
+  chips($("subanim"), SUBANIM, () => cfg.sub.anim, (v) => (cfg.sub.anim = v), 2.3);
+  chips($("font"), FONTS, () => cfg.sub.font, (v) => (cfg.sub.font = v), 2.6);
+  chips($("case"), CASES, () => cfg.sub.case, (v) => (cfg.sub.case = v), 2.6);
+  $("size").value = cfg.sub.size; $("sizev").textContent = Math.round(cfg.sub.size * 100) + " %";
+  chips($("look"), LOOKS, () => cfg.ins.look, (v) => (cfg.ins.look = v), 3.4);
+  chips($("insanim"), INSANIM, () => cfg.ins.anim, (v) => (cfg.ins.anim = v), 3.4);
+  chips($("topic"), TOPICS, () => cfg.topic, (v) => (cfg.topic = v), 5.3, true);
+  toggles();
+  try { localStorage.setItem("skl_cs", JSON.stringify(cfg)); } catch (e) {}
+  $("out").textContent = JSON.stringify(cfg);
+}
+$("size").oninput = (e) => { cfg.sub.size = +e.target.value; $("sizev").textContent = Math.round(cfg.sub.size * 100) + " %"; seek(2.6); try { localStorage.setItem("skl_cs", JSON.stringify(cfg)); } catch (x) {} };
+
+// ---------- превью: те же правила, что в StyleConstructor.tsx, на холсте 1080×1920 ----------
+const DUR = 9.6;
+const HOOK = { lead: "как я монтирую", title: "ЗА 15 МИНУТ", end: 2.2, emoji: "⚡️" };
+const TOPIC = { at: 5.2, end: 7.5, lead: "Шаг первый", title: "ГОЛОС В БОТ" };
+const PHRASES = [
+  { s: 2.2, e: 3.5, w: [["бот", 2.2], ["сам", 2.45], ["режет", 2.7], ["паузы", 3.0]] },
+  { s: 3.5, e: 5.2, w: [["и", 3.5], ["ставит", 3.7], ["вставки", 4.05], ["по", 4.45], ["смыслу", 4.65]] },
+  { s: 7.5, e: 9.6, w: [["а", 7.5], ["ты", 7.65], ["просто", 7.9], ["снимаешь", 8.3], ["видео", 8.9]] },
+];
+const KEYS = new Set(["паузы", "смыслу", "снимаешь"]);
+const INS = { at: 3.35, dur: 1.7 };
+
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const backE = (x) => { const c = 1.6, y = clamp(x) - 1; return 1 + (c + 1) * y * y * y + c * y * y; };
+const bounce = (x) => { const v = clamp(x), n = 7.5625, d = 2.75; if (v < 1 / d) return n * v * v; if (v < 2 / d) { const u = v - 1.5 / d; return n * u * u + 0.75; } if (v < 2.5 / d) { const u = v - 2.25 / d; return n * u * u + 0.9375; } const u = v - 2.625 / d; return n * u * u + 0.984375; };
+const lerp = (a, b, k) => a + (b - a) * k;
+const light = (hex) => { const n = parseInt((hex || "#000").slice(1, 7), 16); return 0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255) > 150; };
+const rnd = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const TOP = 235, CPAD = 105, CAP = 1300;
+
+const PERSON = `<svg viewBox="0 0 1080 1920" width="1080" height="1920" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9b6a3"/><stop offset="1" stop-color="#8f7d6c"/></linearGradient>
+<radialGradient id="f" cx=".5" cy=".4" r=".6"><stop offset="0" stop-color="#e8c8ad"/><stop offset="1" stop-color="#c79c7c"/></radialGradient></defs>
+<rect width="1080" height="1920" fill="url(#g)"/><rect x="760" y="0" width="320" height="1920" fill="#b8a693" opacity=".5"/>
+<path d="M140 1920 C160 1470 330 1330 540 1330 C750 1330 920 1470 940 1920Z" fill="#2c3340"/>
+<path d="M455 1240 h170 v130 c-40 50 -130 50 -170 0z" fill="#c99d7d"/>
+<ellipse cx="540" cy="980" rx="215" ry="275" fill="url(#f)"/>
+<path d="M320 930 C320 690 430 640 545 640 C690 640 770 720 765 930 C730 800 640 770 540 775 C440 780 360 820 320 930Z" fill="#3a2a22"/>
+<ellipse cx="465" cy="985" rx="18" ry="12" fill="#3a2a22"/><ellipse cx="615" cy="985" rx="18" ry="12" fill="#3a2a22"/>
+<path d="M480 1120 q60 34 120 0" stroke="#8a5a48" stroke-width="10" fill="none" stroke-linecap="round"/></svg>`;
+const ICON = `<svg viewBox="0 0 100 100" width="100%" height="100%"><defs><linearGradient id="c" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd76a"/><stop offset="1" stop-color="#d99a1f"/></linearGradient></defs>
+<ellipse cx="50" cy="62" rx="34" ry="12" fill="#b37b12"/><rect x="16" y="40" width="68" height="22" fill="#d99a1f"/><ellipse cx="50" cy="40" rx="34" ry="12" fill="url(#c)"/><text x="50" y="46" font-size="16" text-anchor="middle" fill="#8a5a00" font-weight="800">₽</text></svg>`;
+const PHOTO = `<div style="width:100%;height:100%;background:linear-gradient(160deg,#7fb3d5,#2f6f8f 55%,#e0b36b 56%,#c98a3d)"></div>`;
+
+function segText(kind, lead, title, r, e, BG, ACC, t) {
+  const ink = light(BG) ? "#151515" : "#fff";
+  const tsz = (s, big) => (s.length > 16 ? big * 0.63 : s.length > 10 ? big * 0.79 : big);
+  const letters = (txt, at, size, color, fam, seed) => [...txt].map((ch, i) => { const k = ease((r - at - i * 0.022) / 0.3);
+    return `<span style="display:inline-block;opacity:${k};filter:blur(${(1 - k) * 6}px);transform:translateY(${(rnd(seed + i) > .5 ? 1 : -1) * 14 * (1 - k)}px)">${ch === " " ? "&nbsp;" : esc(ch)}</span>`; }).join("");
+  if (kind === "hybrid") return `<div style="position:absolute;left:${CPAD}px;right:${CPAD}px;top:${TOP}px;text-align:center;color:${ink}">
+    <div style="font:600 52px Manrope;opacity:${ease(r / .25)}">${esc(lead)}</div>
+    <div style="font:400 ${tsz(title, 190)}px/0.95 'Bebas Neue';opacity:${ease((r - .12) / .3)};filter:blur(${(1 - ease((r - .12) / .3)) * 10}px)">${esc(title)}</div></div>`;
+  if (kind === "white") return `<div style="position:absolute;left:${CPAD}px;right:${CPAD}px;top:${TOP + 50}px;text-align:center;line-height:1">
+    <div style="font:700 64px Caveat;color:#8a8a8a">${letters(lead, 0.05, 64, "", "", 3)}</div>
+    <div style="font:400 ${tsz(title, 150)}px 'Bebas Neue';color:#151515">${letters(title, 0.2, 0, "", "", 9)}</div>
+    <div style="margin:18px auto 0;height:10px;border-radius:5px;background:${ACC};width:${60 * ease((r - .5) / .4)}%"></div></div>`;
+  if (kind === "plate") { const pink = light(BG) ? "#151515" : "#fff"; const acc = light(BG) === light(ACC) ? pink : ACC; const k = backE(r / .4), ko = ease((e - t) / .25), kt = ease((r - .12) / .35), k2 = ease((r - .22) / .3);
+    return `<div style="position:absolute;left:${CPAD}px;right:${CPAD}px;top:${TOP + 30}px;display:flex;justify-content:center;opacity:${ko};transform:scale(${.86 + .14 * Math.min(k, 1.06)});transform-origin:50% 0">
+      <div style="background:${BG};border-radius:34px;padding:26px 40px 30px;box-shadow:0 22px 60px rgba(0,0,0,.35);text-align:center">
+      <div style="font:700 46px Manrope;color:${pink};opacity:${kt}">${esc(lead)}</div>
+      <div style="font:900 ${title.length > 14 ? 84 : 104}px/1 -apple-system,system-ui,sans-serif;color:${acc};opacity:${k2};transform:translateY(${(1 - k2) * 18}px)">${esc(title)}</div></div></div>`; }
+  if (kind === "ladder") { const ls = [...lead.split(" ").map((w) => [w, 0]), ...title.split(" ").map((w) => [w, 1])].slice(0, 6);
+    return `<div style="position:absolute;left:${CPAD}px;right:${CPAD}px;top:${TOP + 20}px">${ls.map(([w, cap], i) => { const k = ease((r - i * .13) / .3);
+      return `<div style="margin-left:${[0, 120, 240, 120, 0, 120][i] + 30}px;font:${cap ? "400 128px/0.95 'Bebas Neue'" : "600 62px/1.15 -apple-system,system-ui"};color:${cap ? ACC : "#fff"};opacity:${k};filter:blur(${(1 - k) * 8}px);text-shadow:0 6px 22px rgba(0,0,0,.45)">${esc(cap ? w.toUpperCase() : w.toLowerCase())}</div>`; }).join("")}</div>`; }
+  if (kind === "hand") { const w = clamp(r / Math.max(.6, lead.length * .045)), kt = ease((r - .45) / .35);
+    return `<div style="position:absolute;left:${CPAD - 20}px;right:${CPAD - 20}px;top:${TOP + 10}px;text-align:center">
+      <div style="font:700 96px/1 Caveat;color:${ACC};clip-path:inset(-20% ${100 - w * 100}% -20% 0);text-shadow:0 4px 18px rgba(0,0,0,.35)">${esc(lead)}</div>
+      <div style="font:400 ${tsz(title, 160)}px/0.95 'Bebas Neue';color:#fff;opacity:${kt};transform:translateY(${(1 - kt) * 24}px);text-shadow:0 8px 30px rgba(0,0,0,.45)">${esc(title)}</div></div>`; }
+  if (kind === "type") { const n = Math.floor(clamp((r - .25) / Math.max(.5, title.length * .05)) * title.length), km = ease((r - .25) / .3), car = Math.floor(t * 2.5) % 2 === 0 && n < title.length;
+    return `<div style="position:absolute;left:${CPAD}px;right:${CPAD}px;top:${TOP + 30}px;text-align:center">
+      <div style="font:700 52px Manrope;color:#fff;opacity:${ease(r / .25)};text-shadow:0 4px 16px rgba(0,0,0,.45);margin-bottom:14px">${esc(lead)}</div>
+      <span style="display:inline-block;background:${ACC};border-radius:16px;padding:6px 22px 0;transform:scaleX(${km});transform-origin:0 50%">
+      <span style="font:900 ${title.length > 14 ? 80 : 100}px/1.1 -apple-system,system-ui;color:${light(ACC) ? "#151515" : "#fff"}">${esc(title.slice(0, n))}<span style="opacity:${car ? 1 : 0}">|</span><span style="opacity:0">${esc(title.slice(n))}</span></span></span></div>`; }
+  return "";
+}
+
+function subs(t, ACC) {
+  const ph = PHRASES.find((p) => t >= p.s && t < p.e); if (!ph) return "";
+  const s = cfg.sub, F = FONTS.find((f) => f[0] === s.font) || FONTS[0];
+  const fam = F[2], wt = F[3], caps = F[5], sz = Math.round(64 * F[4] * (s.size || 1));
+  const color = s.color || "#F7F2E8";
+  const kase = (w) => (caps || s.case === "upper" ? w.toUpperCase() : w);
+  const ws = ph.w, cur = [...ws].reverse().find((w) => t >= w[1] - .02);
+  const base = `display:inline-block;font-family:${fam};font-weight:${wt};font-size:${sz}px;`;
+  const gap = (k) => (k < ws.length - 1 ? "margin-right:.26em;" : "");
+  const sh = "text-shadow:0 4px 16px rgba(0,0,0,.4),0 0 2px rgba(0,0,0,.45);";
+  const wrap = (h) => `<div style="position:absolute;left:70px;right:70px;top:${CAP}px;text-align:center;line-height:1.12;color:${color};${sh}">${h}</div>`;
+  const a = s.anim;
+  if (a === "one") { if (!cur) return ""; const o = ease((t - cur[1]) / .12); return wrap(`<span style="${base}font-size:${sz * 1.2}px;color:${KEYS.has(cur[0]) ? ACC : color};opacity:${o};transform:scale(${.9 + .1 * o})">${esc(kase(cur[0]))}</span>`); }
+  if (a === "karaoke") return wrap(ws.map((w, k) => { const said = t >= w[1] - .02, now = cur === w; return `<span style="${base}${gap(k)}color:${now ? ACC : color};opacity:${said ? 1 : .5};transform:scale(${now ? 1.08 : 1})">${esc(kase(w[0]))}</span>`; }).join(""));
+  if (a === "box") { const ink = light(ACC) ? "#151515" : "#fff"; return wrap(ws.map((w, k) => { const now = cur === w; return `<span style="${base}${gap(k)}padding:0 .14em;border-radius:.18em;background:${now ? ACC : "transparent"};color:${now ? ink : color};${now ? "text-shadow:none;" : ""}transform:rotate(${now ? -2 : 0}deg) scale(${now ? 1.06 : 1})">${esc(kase(w[0]))}</span>`; }).join("")); }
+  if (a === "slide") { const k = ease((t - ph.s) / .28); return wrap(`<div style="overflow:hidden;padding-bottom:8px"><div style="transform:translateY(${(1 - k) * 110}%)">${ws.map((w, i) => `<span style="${base}${gap(i)}color:${KEYS.has(w[0]) ? ACC : color}">${esc(kase(w[0]))}</span>`).join("")}</div></div>`); }
+  if (a === "type") return wrap(ws.map((w, i) => { if (t < w[1] - .02) return ""; const nx = ws[i + 1] ? ws[i + 1][1] : ph.e; const txt = kase(w[0]); const n = Math.max(1, Math.ceil(clamp((t - w[1]) / Math.max(.08, (nx - w[1]) * .8)) * txt.length)); return `<span style="${base}${gap(i)}color:${KEYS.has(w[0]) ? ACC : color}">${esc(txt.slice(0, n))}</span>`; }).join(""));
+  return wrap(ws.map((w, k) => {
+    if (t < w[1] - .02) return `<span style="${base}${gap(k)}opacity:0">${esc(kase(w[0]))}</span>`;
+    if (a === "pop") { const kk = backE((t - w[1]) / .25); return `<span style="${base}${gap(k)}color:${cur === w || KEYS.has(w[0]) ? ACC : color};transform:scale(${Math.max(0, kk)})">${esc(kase(w[0]))}</span>`; }
+    const o = ease((t - w[1]) / .22); return `<span style="${base}${gap(k)}color:${KEYS.has(w[0]) ? ACC : color};opacity:${o};filter:blur(${(1 - o) * 8}px);transform:translateY(${(1 - o) * 10}px)">${esc(kase(w[0]))}</span>`;
+  }).join(""));
+}
+
+function insert(t) {
+  if (t < INS.at || t >= INS.at + INS.dur) return "";
+  const look = cfg.ins.look, anim = cfg.ins.anim, size = 300, right = true;
+  const u = (t - INS.at) / .45, outK = ease((INS.at + INS.dur - t) / .25);
+  let st = `opacity:${outK};`;
+  if (anim === "slide") { const k = ease(u); st += `transform:translateX(${700 * (1 - k)}px) rotate(${8 * (1 - k)}deg)`; }
+  else if (anim === "blur") { const k = ease((t - INS.at) / .4), m = Math.min(k, outK); st = `opacity:${m};filter:blur(${(1 - m) * 14}px);transform:translateY(${(1 - k) * 40}px)`; }
+  else if (anim === "drop") { const k = bounce((t - INS.at) / .7); st += `transform:translateY(${-900 * (1 - k)}px)`; }
+  else if (anim === "flip") { const k = ease((t - INS.at) / .5); st += `transform:perspective(1400px) rotateY(${90 * (1 - k)}deg)`; }
+  else if (anim === "swing") { const x = clamp((t - INS.at) / 1.1); st += `transform-origin:50% -20%;transform:rotate(${x >= 1 ? 0 : 28 * Math.cos(x * Math.PI * 3) * Math.pow(1 - x, 2)}deg)`; }
+  else { const k = backE(u); st += `transform:scale(${Math.max(0, k) * (.85 + .15 * outK)});transform-origin:50% 100%`; }
+  let card;
+  if (look === "polaroid") card = `<div style="width:${size}px;height:${size * 1.16}px;background:#fff;padding:15px 15px ${size * .2}px;box-sizing:border-box;border-radius:6px;box-shadow:0 22px 50px rgba(0,0,0,.38);transform:rotate(5deg)">${PHOTO}</div>`;
+  else if (look === "circle") card = `<div style="width:${size}px;height:${size}px;border-radius:50%;overflow:hidden;border:8px solid #fff;box-shadow:0 18px 46px rgba(0,0,0,.35)">${PHOTO}</div>`;
+  else if (look === "cut" || look === "round") card = `<div style="width:${size}px;height:${size}px;border-radius:${look === "round" ? size * .18 : size * .05}px;overflow:hidden;box-shadow:0 24px 56px rgba(0,0,0,.45)">${PHOTO}</div>`;
+  else card = `<div style="width:${size}px;height:${size}px;background:#fff;border-radius:${size * .16}px;padding:4px;box-shadow:0 18px 46px rgba(0,0,0,.35)"><div style="width:100%;height:100%;border-radius:${size * .12}px;overflow:hidden">${PHOTO}</div></div>`;
+  return `<div style="position:absolute;left:${1015 - size - 12}px;top:820px;${st}">${card}</div>`;
+}
+
+function frame(t) {
+  const BG = cfg.bg || "#F4EFE6", ACC = cfg.acc || "#E2C994", fx = cfg.fx || {};
+  const segs = [{ s: 0, e: HOOK.end, kind: cfg.hook, lead: HOOK.lead, title: HOOK.title, shape: [190, 700, 700, 700, 350, 350, 0] }];
+  if (cfg.topic !== "none") segs.push({ s: TOPIC.at, e: TOPIC.end, kind: cfg.topic, lead: TOPIC.lead, title: TOPIC.title, shape: [150, 640, 780, 1000, 56, 56, 0] });
+  const seg = segs.find((g) => t >= g.s && t < g.e);
+  const bgSeg = seg && (seg.kind === "hybrid" || seg.kind === "white") ? seg : null;
+  let box = [0, 0, 1080, 1920, 0, 0, 0];
+  if (bgSeg) { const tg = bgSeg.kind === "white" ? [90, 760, 900, 1220, 450, 0, 0] : bgSeg.shape;
+    const k = Math.min(bgSeg.s === 0 ? 1 : ease((t - bgSeg.s) / .35), ease((bgSeg.e - t) / .3)); box = box.map((v, i) => lerp(v, tg[i], k)); }
+  let z = 1;
+  if (fx.zoom && !seg) { const ls = segs.map((g, k) => ({ s: g.e, e: k + 1 < segs.length ? segs[k + 1].s : DUR, k })); const l = ls.find((x) => t >= x.s && t < x.e);
+    if (l) { const u = clamp((t - l.s) / (l.e - l.s)); const v = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2; z = l.k % 2 === 0 ? lerp(1, 1.09, v) : lerp(1.09, 1, v); } }
+  if (fx.punch && !bgSeg) { const kw = PHRASES.flatMap((p) => p.w).find((w) => KEYS.has(w[0]) && t >= w[1] && t < w[1] + .9); if (kw) z *= 1 + .12 * (1 - Math.pow(clamp((t - kw[1]) / .9), 2)) * clamp((t - kw[1]) / .06); }
+  if (seg && seg.kind === "plate") z *= 1 + .04 * ease((t - seg.s) / .5);
+  const sheet = bgSeg ? (bgSeg.kind === "white" ? "#fff" : BG) : "#000";
+  let h = `<div style="position:absolute;inset:0;background:${sheet}"></div>`;
+  const cards = bgSeg && fx.layer ? [0, 1] : [];
+  if (bgSeg && bgSeg.kind !== "white") h += cards.map((i) => { const k = ease((t - bgSeg.s - .15 - i * .15) / .5) * Math.min(1, ease((bgSeg.e - t) / .3)); const side = i ? 1 : -1;
+    return `<div style="position:absolute;left:${(side < 0 ? 45 : 737) + side * 500 * (1 - k)}px;top:${i ? 1150 : 900}px;width:300px;height:300px;transform:rotate(${side * 10 * k}deg) scale(${.7 + .3 * k})">${ICON}</div>`; }).join("");
+  h += `<div style="position:absolute;left:${box[0]}px;top:${box[1]}px;width:${box[2]}px;height:${box[3]}px;overflow:hidden;border-radius:${box[4]}px ${box[4]}px ${box[5]}px ${box[5]}px;box-shadow:${bgSeg ? "0 30px 80px rgba(0,0,0,.3)" : "none"}">
+    <div style="position:absolute;left:${(box[2] - 1080) / 2}px;top:${(box[3] - 1920) / 2}px;width:1080px;height:1920px;transform:scale(${z});transform-origin:50% 48%">${PERSON}</div></div>`;
+  if (bgSeg && bgSeg.kind === "white") h += cards.map((i) => { const k = backE((t - bgSeg.s - .35 - i * .2) / .45) * Math.min(1, ease((bgSeg.e - t) / .3)); const side = i ? 1 : -1;
+    return `<div style="position:absolute;left:${side < 0 ? 40 : 780}px;top:${i ? 860 : 820}px;width:260px;height:260px;transform:rotate(${side * 8}deg) scale(${Math.max(0, k)})">${ICON}</div>`; }).join("");
+  if (seg && !bgSeg && seg.kind !== "plate") h += `<div style="position:absolute;left:0;right:0;top:0;height:900px;background:linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,0));opacity:${Math.min(ease((t - seg.s) / .3), ease((seg.e - t) / .3))}"></div>`;
+  if (seg) h += segText(seg.kind, seg.lead, seg.title, t - seg.s, seg.e, BG, ACC, t);
+  if (!(seg && ["hybrid", "white", "ladder", "hand", "type"].includes(seg.kind))) h += subs(t, ACC);
+  if (!bgSeg) h += insert(t);
+  if (fx.emoji && t > .9 && t < HOOK.end) h += `<div style="position:absolute;left:470px;top:1330px;font-size:140px;transform:scale(${backE((t - .9) / .35)})">${HOOK.emoji}</div>`;
+  if (fx.flash && cfg.topic !== "none" && Math.abs(t - TOPIC.at) < .22) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${.85 * (1 - Math.abs(t - TOPIC.at) / .22)}"></div>`;
+  return h;
+}
+
+const MOMENTS = [[0, "хук"], [HOOK.end, "субтитры"], [INS.at, "вставка"], [TOPIC.at, "переход на тему"], [TOPIC.end, "субтитры"]];
+let t0 = performance.now(), last = 0;
+const FREEZE = parseFloat(new URLSearchParams(location.search).get("t"));   // для проверки: ?t=5.6 — стоп-кадр
+function seek(sec) { if (typeof sec === "number") t0 = performance.now() - sec * 1000; }
+function fit() { const ph = $("phone"); $("cv").style.transform = `scale(${ph.clientWidth / 1080})`; }
+function loop(now) {
+  if (now - last > 30) {
+    last = now;
+    const t = isNaN(FREEZE) ? ((now - t0) / 1000) % DUR : FREEZE;
+    $("cv").innerHTML = frame(t);
+    $("moment").textContent = "▶ " + [...MOMENTS].reverse().find((m) => t >= m[0])[1];
+  }
+  requestAnimationFrame(loop);
+}
+
+// ---------- отправка в бот ----------
+function send() {
+  const data = JSON.stringify(Object.assign({ v: 1 }, cfg));
+  if (inTg) { try { tg.sendData(data); } catch (e) { tg.showAlert("Не получилось отправить: " + e.message); } }
+  else { $("out").style.display = "block"; }
+}
+if (inTg) {
+  tg.ready(); tg.expand();
+  try { tg.setHeaderColor("bg_color"); } catch (e) {}
+  tg.MainButton.setParams({ text: "✅ Готово, монтировать так", is_visible: true });
+  tg.MainButton.onClick(send);
+} else {
+  $("send").style.display = "block"; $("send").onclick = send;
+}
+render(); fit(); window.addEventListener("resize", fit);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
