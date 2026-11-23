@@ -7,7 +7,7 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Manrope:wght@500;600;700;800&family=Montserrat:wght@800&family=Anton&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Manrope:wght@500;600;700;800&family=Montserrat:wght@800&family=Anton&family=Oswald:wght@500;600;700&family=Rubik+Spray+Paint&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: var(--tg-theme-bg-color, #111214);
@@ -54,6 +54,10 @@
   .preset { flex: none; border-radius: 14px; padding: 9px 12px; border: 1.5px solid var(--line); background: var(--bg2); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
   .preset b { display: block; font-size: 13.5px; } .preset small { color: var(--hint); font-size: 11.5px; }
   .fallback { position: fixed; left: 12px; right: 12px; bottom: 12px; padding: 15px; border-radius: 14px; border: 0; background: var(--btn); color: var(--btn-text); font: 600 16px/1 inherit; display: none; }
+  .am { display: flex; gap: 9px; align-items: center; }
+  .am .th { flex: none; width: 64px; height: 68px; border-radius: 8px; overflow: hidden; position: relative; background: linear-gradient(#6f8fb0, #b9c4cc 55%, #c9a77c 75%, #5c6b4f); }
+  .am .th .cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0; }
+  #amopts { display: none; }
   pre.out { white-space: pre-wrap; word-break: break-all; font-size: 11px; background: var(--bg2); padding: 10px; border-radius: 12px; display: none; }
 </style>
 </head>
@@ -70,7 +74,11 @@
   <div class="lbl">Начать с готового набора</div>
   <div class="presets" id="presets"></div>
 
-  <div class="sec" id="s-hook"><h2>🪝 Хук</h2><p class="h">Как появляется заголовок в первые секунды.</p><div class="chips" id="hook"></div></div>
+  <div class="sec" id="s-hook"><h2>🪝 Хук</h2><p class="h">Как появляется заголовок в первые секунды.</p><div class="chips" id="hook"></div>
+    <div class="lbl">Фишки текста alex.amadeo: крупное слово, мелкие слова, рукописный акцент. Каждое слово встаёт, когда его говоришь.</div><div class="chips" id="hookam"></div>
+    <div id="amopts"><div id="hwbox"><div class="lbl">Главное слово заголовка (крупно)</div><div class="chips" id="hw"></div></div>
+      <div class="lbl">Где текст</div><div class="chips" id="hpos"></div></div>
+  </div>
 
   <div class="sec" id="s-color"><h2>🎨 Цвет</h2>
     <div class="lbl">Основной: фон, плашка</div><div class="sw" id="bg"></div>
@@ -99,6 +107,389 @@
 <button class="fallback" id="send">Готово</button>
 
 <script>
+/* AMLAY:BEGIN — собрано из ~/remotion-reels-test/src/lab/amadeoLayout.ts скриптом miniapp/build_am.sh, руками не править */
+"use strict";
+var AMLAY = (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __propIsEnum = Object.prototype.propertyIsEnumerable;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __spreadValues = (a, b) => {
+    for (var prop in b || (b = {}))
+      if (__hasOwnProp.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    if (__getOwnPropSymbols)
+      for (var prop of __getOwnPropSymbols(b)) {
+        if (__propIsEnum.call(b, prop))
+          __defNormalProp(a, prop, b[prop]);
+      }
+    return a;
+  };
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+  // ../../remotion-reels-test/src/lab/amadeoLayout.ts
+  var amadeoLayout_exports = {};
+  __export(amadeoLayout_exports, {
+    AM_KINDS: () => AM_KINDS,
+    AM_MAIN_WORD: () => AM_MAIN_WORD,
+    AM_STEP: () => AM_STEP,
+    amLayout: () => amLayout,
+    isAm: () => isAm,
+    pickMain: () => pickMain
+  });
+  var AM_KINDS = ["am_two", "am_side", "am_frame", "am_flash", "am_fonts", "am_neg", "am_tall", "am_letter", "am_melt"];
+  var isAm = (k) => !!k && k.slice(0, 3) === "am_";
+  var AM_MAIN_WORD = ["am_two", "am_side", "am_fonts", "am_neg"];
+  var CX = 540;
+  var W_MAIN = 930;
+  var TOP = 285;
+  var LOW_BOT = 1330;
+  var SAFE_TOP = 245;
+  var SMALL_CAP = 60;
+  var CAP_MAX = 360;
+  var LS_SMALL = -0.1;
+  var LS_SCRIPT = -0.05;
+  var AM_STEP = 2 / 30;
+  var WHITE = "#FFFFFF";
+  var RED = "#E90F0F";
+  var YEL = "#F2C21B";
+  var norm = (w) => w.toLowerCase().replace(/ё/g, "\u0435").replace(/[^a-zа-я0-9]/g, "");
+  var splitW = (s) => (s || "").replace(/[«»"“”„]/g, " ").split(/\s+/).map((w) => w.replace(/[.,;:!?…()\[\]—–]/g, "").replace(/^-+|-+$/g, "")).filter((w) => /[A-Za-zА-Яа-яЁё0-9+#]/.test(w));
+  var low = (w) => /^[A-ZА-ЯЁ0-9]{2,4}$/.test(w.replace(/[^A-Za-zА-Яа-яЁё0-9]/g, "")) ? w : w.toLowerCase();
+  var rgb = (h) => {
+    const n = parseInt((h || "#000").replace("#", "").slice(0, 6), 16);
+    return [n >> 16, n >> 8 & 255, n & 255];
+  };
+  var hot = (h) => {
+    const [r, g, b] = rgb(h);
+    return r > 170 && g < 120 && b < 120;
+  };
+  var alt = (acc) => hot(acc) ? YEL : RED;
+  function pickMain(tw, hw = "long") {
+    if (!tw.length) return 0;
+    if (hw === "first") return 0;
+    if (hw === "last") return tw.length - 1;
+    let b = 0;
+    tw.forEach((w, i) => {
+      if (norm(w).length > norm(tw[b]).length) b = i;
+    });
+    return b;
+  }
+  function balance(ws, n) {
+    if (ws.length <= n) return ws.slice();
+    const len = (a) => a.join(" ").length;
+    let best = [ws.join(" ")], bestV = 1e9;
+    const rec = (start, left, acc) => {
+      if (left === 1) {
+        const all = [...acc, ws.slice(start)];
+        const v = Math.max(...all.map(len));
+        if (v < bestV) {
+          bestV = v;
+          best = all.map((a) => a.join(" "));
+        }
+        return;
+      }
+      for (let i = start + 1; i <= ws.length - left + 1; i++) rec(i, left - 1, [...acc, ws.slice(start, i)]);
+    };
+    rec(0, n, []);
+    return best;
+  }
+  function amLayout(inp, M) {
+    var _a, _b;
+    const { s, e } = inp, D = Math.max(0.6, e - s);
+    const acc = inp.acc || YEL;
+    const lw = splitW(inp.lead).map(low);
+    const tw = splitW(inp.title).map((w) => w.toUpperCase());
+    const mi = pickMain(tw, inp.hw);
+    const MAIN = (_a = tw[mi]) != null ? _a : "";
+    const REST = tw.filter((_, i) => i !== mi);
+    const items = [];
+    let tMain = s, flash, zoom, edge;
+    const spoken = (inp.words || []).filter((w) => w.s >= s - 0.05 && w.s < e + 0.3);
+    const used = /* @__PURE__ */ new Set();
+    const tm = (word, frac) => {
+      const last = e - 0.4;
+      if (word) {
+        const n = norm(word);
+        const i = spoken.findIndex((w, k) => !used.has(k) && n.length > 0 && norm(w.w) === n);
+        if (i >= 0) {
+          used.add(i);
+          return Math.max(s, Math.min(spoken[i].s, last));
+        }
+      }
+      return Math.max(s, Math.min(s + frac * D, last));
+    };
+    const capOf = (f, px) => M(f, "\u041D", px).asc;
+    const fitPx = (f, text, W, capMax, probe) => {
+      const m = M(f, text, 100);
+      const a = probe === "" ? m.asc : M(f, probe != null ? probe : "\u041D", 100).asc;
+      return Math.min(100 * W / Math.max(1, m.w), 100 * capMax / Math.max(1, a));
+    };
+    const smallPx = 100 * SMALL_CAP / Math.max(1, M("cera", "\u0410\u0430\u0431", 100).asc);
+    const put = (runs, at, o) => {
+      var _a2, _b2, _c, _d;
+      const ls = (_a2 = o.ls) != null ? _a2 : 0;
+      let w = 0, l = 0, asc = 0, desc = 0;
+      runs.forEach((r, i) => {
+        var _a3;
+        const m = M(r.f, r.t, r.px);
+        const n = [...r.t].length - (i === runs.length - 1 ? 1 : 0);
+        const extra = ls * r.px * Math.max(0, n);
+        if (runs.length === 1) {
+          w = m.w + extra;
+          l = m.l;
+        } else {
+          w += m.adv + extra + ((_a3 = r.dx) != null ? _a3 : 0);
+          if (i === 0) l = m.l;
+        }
+        asc = Math.max(asc, m.asc);
+        desc = Math.max(desc, m.desc);
+      });
+      const left = o.cx !== void 0 ? o.cx - w / 2 : o.right !== void 0 ? o.right - w : (_b2 = o.x) != null ? _b2 : 0;
+      const sy = (_c = o.sy) != null ? _c : 1;
+      const it = {
+        at,
+        until: (_d = o.until) != null ? _d : e,
+        x: left + l,
+        y: o.base,
+        runs,
+        ls,
+        stroke: o.stroke,
+        sy,
+        fx: o.fx,
+        top: o.base - asc * sy,
+        bot: o.base + desc,
+        left,
+        w
+      };
+      items.push(it);
+      return it;
+    };
+    const small = (t, at, o) => {
+      let px = smallPx;
+      const w = M("cera", t, px).w + LS_SMALL * px * ([...t].length - 1);
+      if (o.maxW && w > o.maxW) px *= o.maxW / w;
+      return put([{ t, f: "cera", px, fill: WHITE }], at, __spreadValues({ ls: LS_SMALL, stroke: true }, o));
+    };
+    const script = (t, W, capMax) => fitPx("script", t, W, capMax, "");
+    const titleLines = (capMax) => {
+      if (tw.length < 2) return [tw.join(" ")];
+      const one = fitPx("druk", tw.join(" "), W_MAIN, capMax);
+      if (capOf("druk", one) >= 170) return [tw.join(" ")];
+      return balance(tw, 2);
+    };
+    const leadLine = (at) => lw.length ? small(lw.join(" "), at, { cx: CX, base: TOP + SMALL_CAP, maxW: W_MAIN }) : void 0;
+    switch (inp.kind) {
+      case "am_two": {
+        const L = [...lw];
+        let hand = REST.join(" ").toLowerCase();
+        if (!hand && L.length >= 3) hand = L.pop();
+        const nL = Math.ceil(L.length / 2);
+        const sL = L.slice(0, nL).join(" "), sR = L.slice(nL).join(" ");
+        const px = fitPx("druk", MAIN, W_MAIN, CAP_MAX), cap = capOf("druk", px), mw = M("druk", MAIN, px).w, mx = CX - mw / 2;
+        const sb = TOP + SMALL_CAP, mb = sb + 7 + cap;
+        const tL = tm(L[0], 0), tR = Math.max(tL, tm(L[nL], 0.15));
+        tMain = Math.max(tR, tm(MAIN, 0.35));
+        const wL = sL ? M("cera", sL, smallPx).w : 0, wR = sR ? M("cera", sR, smallPx).w : 0;
+        const k = wL + wR > mw - 60 ? (mw - 60) / (wL + wR) : 1;
+        if (sL) put([{ t: sL, f: "cera", px: smallPx * k, fill: WHITE }], tL, { x: mx + 6, base: sb, ls: LS_SMALL, stroke: true });
+        if (sR) put([{ t: sR, f: "cera", px: smallPx * k, fill: WHITE }], tR, { right: mx + mw - 6, base: sb, ls: LS_SMALL, stroke: true });
+        put([{ t: MAIN, f: "druk", px, fill: acc }], tMain, { cx: CX, base: mb });
+        if (hand) {
+          const hp = script(hand, mw * 0.75, cap * 0.8);
+          put([{ t: hand, f: "script", px: hp, fill: alt(acc) }], Math.max(tMain + 0.25, tm(hand.split(" ")[0], 0.6)), { cx: CX, base: mb - cap * 0.05, ls: LS_SCRIPT });
+        }
+        break;
+      }
+      case "am_side": {
+        const lines = balance([...lw, ...REST.map((w) => w.toLowerCase())], 3);
+        const n = lines.length;
+        const capM100 = capOf("druk", 100), aM = M("druk", MAIN, 100).w / capM100;
+        const kk = n ? 1 + 1.27 * (n - 1) : 1;
+        const smallAsc100 = M("cera", "\u0410\u0430\u0431", 100).asc;
+        const aL = n ? Math.max(...lines.map((t) => (M("cera", t, 100).w + LS_SMALL * 100 * ([...t].length - 1)) / smallAsc100)) : 0;
+        const gap = n ? 24 : 0;
+        let C = (W_MAIN + 10 - gap) / (aM + aL / kk);
+        C = Math.min(C, CAP_MAX + 40);
+        const c = C / kk, total = C * aM + gap + c * aL;
+        const x0 = Math.max(70, CX - total / 2), mb = TOP + C;
+        tMain = tm(MAIN, 0.5);
+        lines.forEach((t, i) => {
+          const at = tm(t.split(" ")[0], 0.1 + 0.12 * i);
+          put([{ t, f: "cera", px: 100 * c / smallAsc100, fill: WHITE }], at, { x: x0 + C * aM + gap, base: TOP + c + i * 1.27 * c, ls: LS_SMALL, stroke: true });
+        });
+        put([{ t: MAIN, f: "druk", px: 100 * C / capM100, fill: acc }], tMain, { x: x0, base: mb });
+        break;
+      }
+      case "am_frame":
+      case "am_flash": {
+        const lead = leadLine(tm(lw[0], 0));
+        const tl = titleLines(CAP_MAX);
+        const capMax = tl.length > 1 ? 280 : CAP_MAX;
+        let y = lead ? lead.y + 26 : TOP;
+        tMain = tm(tw[0], inp.kind === "am_flash" ? 0.45 : 0.35);
+        tl.forEach((t) => {
+          const px = fitPx("druk", t, W_MAIN, capMax), cap = capOf("druk", px);
+          y += cap;
+          put([{ t, f: "druk", px, fill: inp.kind === "am_frame" ? WHITE : acc }], tMain, { cx: CX, base: y, fx: inp.kind === "am_frame" ? "frame" : void 0 });
+          y += 18;
+        });
+        if (inp.kind === "am_flash") {
+          flash = tMain;
+          zoom = 1.35;
+        }
+        if (inp.kind === "am_frame") edge = acc;
+        break;
+      }
+      case "am_fonts": {
+        const lead = leadLine(tm(lw[0], 0));
+        tMain = tm(MAIN, 0.4);
+        const vars = [
+          { t: MAIN, f: "druk", px: fitPx("druk", MAIN, W_MAIN, 300), fill: acc },
+          { t: MAIN, f: "sprite", px: fitPx("sprite", MAIN, 900, 300), fill: acc },
+          { t: MAIN.toLowerCase(), f: "script", px: script(MAIN.toLowerCase(), 680, 300), fill: acc }
+        ];
+        const caps = vars.map((r) => r.f === "script" ? M("script", r.t, r.px).asc : capOf(r.f, r.px));
+        const capMax = Math.max(...caps);
+        const mid = (lead ? lead.y + 30 : TOP) + capMax / 2;
+        let i = 0;
+        for (let t = tMain; t < e - 1e-3; t += AM_STEP, i++) {
+          const r = vars[i % 3];
+          put([r], t, { cx: CX, base: mid + caps[i % 3] / 2, until: Math.min(e, t + AM_STEP), ls: r.f === "script" ? LS_SCRIPT : 0 });
+        }
+        if (REST.length) small(REST.join(" ").toLowerCase(), Math.max(tMain + 0.3, tm(REST[0], 0.65)), { cx: CX, base: mid + capMax / 2 + 34 + SMALL_CAP, maxW: W_MAIN });
+        break;
+      }
+      case "am_neg": {
+        let y = TOP;
+        if (lw.length) {
+          const t = lw.join(" ").toUpperCase();
+          const px2 = fitPx("benzin", t, W_MAIN, 50);
+          const it = put([{ t, f: "benzin", px: px2, fill: WHITE }], tm(lw[0], 0), { cx: CX, base: TOP + capOf("benzin", px2), stroke: true });
+          y = it.y + 24;
+        }
+        const px = fitPx("druk", MAIN, W_MAIN, CAP_MAX), cap = capOf("druk", px), mw = M("druk", MAIN, px).w;
+        tMain = tm(MAIN, 0.4);
+        put([{ t: MAIN, f: "druk", px, fill: WHITE }], tMain, { cx: CX, base: y + cap, fx: "neg" });
+        if (REST.length) {
+          const h = REST.join(" ").toLowerCase();
+          const hp = script(h, mw * 0.55, cap * 0.55);
+          put([{ t: h, f: "script", px: hp, fill: acc }], Math.max(tMain + 0.3, tm(REST[0], 0.65)), { right: CX + mw / 2 - 20, base: y + cap + cap * 0.18, ls: LS_SCRIPT });
+        }
+        break;
+      }
+      case "am_tall": {
+        const t = tw.join(" "), SY = 1.7;
+        const px = fitPx("druk", t, W_MAIN, 470 / SY), cap = capOf("druk", px), mw = M("druk", t, px).w;
+        const base = TOP + cap * SY;
+        const tS = tm(lw[0], 0);
+        tMain = tm(tw[0], 0.3);
+        put([{ t, f: "druk", px, fill: acc }], tMain, { cx: CX, base, sy: SY });
+        if (lw.length) {
+          const h = lw.join(" ");
+          put(
+            [{ t: h, f: "script", px: script(h, Math.max(Math.min(mw, 640), mw * 0.92), cap * SY * 0.5), fill: alt(acc) }],
+            tS,
+            { cx: CX + 20, base: base - cap * SY * 0.35, ls: LS_SCRIPT }
+          );
+        }
+        break;
+      }
+      case "am_letter": {
+        const lead = leadLine(tm(lw[0], 0));
+        const lines = tw.length > 3 ? balance(tw, 3) : tw.slice();
+        let px = Math.min(...lines.map((t) => fitPx("druk", t, W_MAIN, CAP_MAX)));
+        let cap = capOf("druk", px);
+        const room = 640, need = lines.length * cap + (lines.length - 1) * 14;
+        if (need > room) {
+          px *= room / need;
+          cap = capOf("druk", px);
+        }
+        let y = lead ? lead.y + 26 : TOP;
+        const times = lines.map((t, i) => tm(t.split(" ")[0], 0.15 + 0.15 * i));
+        tMain = (_b = times[0]) != null ? _b : s;
+        const swap = Math.min(e - 0.35, Math.max(Math.max(...times, s) + 0.45, s + 0.6 * D));
+        lines.forEach((t, i) => {
+          var _a2;
+          y += cap;
+          put([{ t, f: "druk", px, fill: WHITE }], times[i], { cx: CX, base: y, until: swap });
+          const ch = [...t];
+          const ok = (c) => !!c && /[вмнсаолктиmnsaolkti]/.test(c.toLowerCase());
+          const want = i === 0 ? Math.min(1, ch.length - 1) : Math.floor(ch.length * 0.6);
+          const order = ch.map((_, k) => k).sort((a, b) => Math.abs(a - want) - Math.abs(b - want) || b - a);
+          const j = (_a2 = order.find((k) => ok(ch[k]))) != null ? _a2 : -1;
+          if (j < 0) {
+            put([{ t, f: "druk", px, fill: WHITE }], swap, { cx: CX, base: y });
+            y += 14;
+            return;
+          }
+          const letter = ch[j].toLowerCase();
+          const sp = 100 * cap / Math.max(1, M("script", letter, 100).asc);
+          const slot = M("druk", ch[j], px).adv * 1.15, over = M("script", letter, sp).adv - slot;
+          const runs = [];
+          if (j > 0) runs.push({ t: ch.slice(0, j).join(""), f: "druk", px, fill: WHITE });
+          runs.push({ t: letter, f: "script", px: sp, fill: acc, dx: j > 0 ? -over / 2 : 0 });
+          if (j < ch.length - 1) runs.push({ t: ch.slice(j + 1).join(""), f: "druk", px, fill: WHITE, dx: j > 0 ? -over / 2 : -over });
+          put(runs, swap, { cx: CX, base: y });
+          y += 14;
+        });
+        break;
+      }
+      case "am_melt": {
+        const t = tw.join(" ");
+        const px = fitPx("druk", t, W_MAIN, CAP_MAX), cap = capOf("druk", px), mw = M("druk", t, px).w;
+        const base = TOP + cap, top = base - cap;
+        tMain = Math.min(tm(tw[0], 0.1), s + 0.4 * D);
+        const it = put([{ t, f: "druk", px, fill: acc }], tMain, { cx: CX, base, fx: "melt" });
+        it.meltY0 = top + 0.35 * cap;
+        it.meltY1 = top + 0.95 * cap;
+        if (lw.length) {
+          const h = lw.join(" ");
+          put(
+            [{ t: h, f: "script", px: script(h, mw * 0.85, cap * 0.75), fill: alt(acc) }],
+            Math.max(tMain + 0.3, tm(lw[0], 0.5)),
+            { right: CX + mw / 2 - 30, base: base - 10, ls: LS_SCRIPT }
+          );
+        }
+        break;
+      }
+    }
+    if (inp.pos === "low" && items.length) {
+      const top = Math.min(...items.map((i) => i.top)), bot = Math.max(...items.map((i) => i.bot));
+      const dy = Math.max(SAFE_TOP - top, LOW_BOT - bot);
+      items.forEach((i) => {
+        var _a2;
+        i.y += dy;
+        i.top += dy;
+        i.bot += dy;
+        if (i.meltY0 !== void 0) {
+          i.meltY0 += dy;
+          i.meltY1 = ((_a2 = i.meltY1) != null ? _a2 : 0) + dy;
+        }
+      });
+    }
+    return { items, tMain, flash, zoom, edge };
+  }
+  return __toCommonJS(amadeoLayout_exports);
+})();
+/* AMLAY:END */
+</script>
+<script>
 const tg = window.Telegram && Telegram.WebApp;
 const inTg = !!(tg && tg.initData);
 
@@ -111,6 +502,20 @@ const HOOKS = [
   ["white", "Белый лист", "ты в арке, как в Белой карточке"],
   ["type", "Печатная машинка", "буквы по одной на маркере"],
 ];
+// фишки текста alex.amadeo (23.11.2026): имена = cs.hook в StyleConstructor.tsx; пример — подпись для значка
+const AMHOOKS = [
+  ["am_two", "Два слова над главным", "мелкие над краями, рукописный акцент цветом", { lead: "два слова", title: "ГЛАВНОЕ АКЦЕНТ" }],
+  ["am_side", "Крупное + три строки", "слово слева, справа строки той же высоты", { lead: "провести вечер у моря", title: "КРУТО" }],
+  ["am_frame", "Кадр в буквах", "внутри букв другой кадр или фото", { lead: "киношная", title: "КРУТОЙ ЭФФЕКТ" }],
+  ["am_flash", "Вспышка на наезде", "слово встаёт со вспышкой и резким наездом", { lead: "вместо зума", title: "ВАЖНОЕ" }],
+  ["am_fonts", "Смена шрифтов", "слово меняет 3 шрифта каждые 2 кадра", { lead: "одно слово", title: "ХАЙПОВО" }],
+  ["am_neg", "Негатив в буквах", "внутри букв тот же кадр в негативе", { lead: "обычный +", title: "НЕГАТИВ" }],
+  ["am_tall", "Вытянутое + курсив", "высокое узкое слово, поверх рукописное", { lead: "и клёво", title: "КРУТО" }],
+  ["am_letter", "Рукописная буква", "в рубленом слове одна буква от руки", { lead: "", title: "ДВА СЛОВА" }],
+  ["am_melt", "Растворение", "низ слова тает, сверху рукописное", { lead: "дорого", title: "КРАСИВО" }],
+];
+const HWS = [["long", "Самое длинное"], ["first", "Первое"], ["last", "Последнее"]];
+const HPOS = [["top", "Сверху"], ["low", "Снизу, над кнопками"]];
 const TOPICS = [
   ["hybrid", "Цветной фон", "кадр сжимается в круг или карточку"],
   ["plate", "Плашки", "заголовок на плашке над головой, как в 1 стиле"],
@@ -148,6 +553,7 @@ const PRESETS = [
   ["Как Белая карточка", "белый лист, арка", { hook: "white", topic: "white", bg: "#F4EFE6", acc: "#E5322D", sub: { font: "manrope", anim: "blur", case: "lower", size: 1, color: "#FFFFFF" }, ins: { look: "round", anim: "pop" }, fx: { layer: true } }],
   ["Как Минимализм", "лесенка, тонко", { hook: "ladder", topic: "none", bg: "#171717", acc: "#E2C994", sub: { font: "sf", anim: "karaoke", case: "lower", size: 0.9, color: "#F7F2E8" }, ins: { look: "cut", anim: "blur" }, fx: { zoom: true } }],
   ["Как Чистый", "от руки, спокойно", { hook: "hand", topic: "none", bg: "#F4EFE6", acc: "#D6BF9C", sub: { font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, ins: { look: "cut", anim: "blur" }, fx: {} }],
+  ["Как alex.amadeo", "крупный Druk, рукописный акцент", { hook: "am_two", hw: "long", hpos: "top", topic: "none", bg: "#171717", acc: "#F2C21B", sub: { font: "mont", anim: "one", case: "lower", size: 1, color: "#FFFFFF" }, ins: { look: "cut", anim: "pop" }, fx: { zoom: true, punch: true } }],
   ["Микс", "плашка + гибрид + белая", { hook: "plate", topic: "hybrid", bg: "#1F6FE0", acc: "#F2C62A", sub: { font: "bebas", anim: "pop", case: "upper", size: 1.1, color: "#FFFFFF" }, ins: { look: "polaroid", anim: "drop" }, fx: { zoom: true, punch: true, flash: true, layer: true, emoji: true } }],
 ];
 
@@ -162,6 +568,7 @@ try {   // настройки из бота (прошлый свой стиль)
 cfg.sub = Object.assign({ font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, cfg.sub || {});
 cfg.ins = Object.assign({ look: "frame", anim: "pop" }, cfg.ins || {});
 cfg.fx = cfg.fx || {};
+cfg.hw = cfg.hw || "long"; cfg.hpos = cfg.hpos || "top";
 
 const $ = (id) => document.getElementById(id);
 const haptic = () => { try { tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged(); } catch (e) {} };
@@ -215,6 +622,11 @@ function render(full = true) {
     pr.appendChild(b);
   });
   chips($("hook"), HOOKS, () => cfg.hook, (v) => (cfg.hook = v), 0, true);
+  amChips();
+  $("amopts").style.display = AMLAY.isAm(cfg.hook) ? "block" : "none";
+  $("hwbox").style.display = AMLAY.AM_MAIN_WORD.includes(cfg.hook) ? "block" : "none";
+  chips($("hw"), HWS, () => cfg.hw, (v) => (cfg.hw = v), 0);
+  chips($("hpos"), HPOS, () => cfg.hpos, (v) => (cfg.hpos = v), 0);
   if (full) { swatches($("bg"), BGS, () => cfg.bg, (v) => (cfg.bg = v), 5.3); swatches($("acc"), ACCS, () => cfg.acc, (v) => (cfg.acc = v), 2.6); swatches($("subcolor"), SUBCOLORS, () => cfg.sub.color, (v) => (cfg.sub.color = v), 2.6); }
   chips($("subanim"), SUBANIM, () => cfg.sub.anim, (v) => (cfg.sub.anim = v), 2.3);
   chips($("font"), FONTS, () => cfg.sub.font, (v) => (cfg.sub.font = v), 2.6);
@@ -297,6 +709,54 @@ function segText(kind, lead, title, r, e, BG, ACC, t) {
   return "";
 }
 
+// ---------- хук alex.amadeo: та же раскладка, что в ролике (amadeoLayout.ts, собрана ниже), шрифты похожие ----------
+const AMF = { druk: ["Oswald", 700], cera: ["Manrope", 500], script: ["Caveat", 700], sprite: ["Rubik Spray Paint", 400], benzin: ["Montserrat", 800] };
+let amCtx = null;
+function amMeas(f, text, px) {
+  amCtx = amCtx || document.createElement("canvas").getContext("2d");
+  const [fam, wt] = AMF[f]; amCtx.font = `${wt} ${px}px "${fam}"`;
+  const m = amCtx.measureText(text);
+  return { w: m.actualBoundingBoxLeft + m.actualBoundingBoxRight, l: m.actualBoundingBoxLeft, asc: m.actualBoundingBoxAscent, desc: m.actualBoundingBoxDescent, adv: m.width };
+}
+const AMPHOTO = `<div style="position:absolute;inset:0;background:linear-gradient(170deg,#ff9a3c,#ffd36e 35%,#4fa3d1 60%,#1d4f73)"></div>`;
+function amText(it, mask, outline) {
+  const tr = it.sy !== 1 ? ` transform="translate(0 ${it.y}) scale(1 ${it.sy}) translate(0 ${-it.y})"` : "";
+  const st = outline ? ` stroke="${outline}" stroke-width="3"` : it.stroke ? ` stroke="#000" stroke-width="2"` : "";
+  return `<text x="${it.x}" y="${it.y}"${tr}${st}${mask ? ` mask="${mask}"` : ""} stroke-linejoin="round" paint-order="stroke" style="white-space:pre">` +
+    it.runs.map((r) => `<tspan font-family="${AMF[r.f][0]}" font-weight="${AMF[r.f][1]}" font-size="${r.px}" fill="${outline ? "none" : r.fill}"${r.dx ? ` dx="${r.dx}"` : ""}${it.ls ? ` letter-spacing="${it.ls * r.px}"` : ""}>${esc(r.t)}</tspan>`).join("") + `</text>`;
+}
+function amHtml(out, t, id, under) {
+  const vis = out.items.filter((i) => t >= i.at && t < i.until);
+  const clip = (fx) => vis.filter((i) => i.fx === fx);
+  const plain = vis.filter((i) => i.fx !== "frame" && i.fx !== "neg");
+  const melt = plain.find((i) => i.fx === "melt");
+  let h = "";
+  for (const fx of ["frame", "neg"]) if (clip(fx).length) h += `<div style="position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;clip-path:url(#${id}-${fx})">${under(fx)}</div>`;
+  h += `<svg width="1080" height="1920" viewBox="0 0 1080 1920" style="position:absolute;left:0;top:0"><defs>` +
+    ["frame", "neg"].map((fx) => `<clipPath id="${id}-${fx}" clipPathUnits="userSpaceOnUse">${clip(fx).map((i) => amText(i)).join("")}</clipPath>`).join("") +
+    (melt ? `<linearGradient id="${id}-mg" gradientUnits="userSpaceOnUse" x1="0" y1="${melt.meltY0}" x2="0" y2="${melt.meltY1}"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>
+      <mask id="${id}-m" maskUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920"><rect width="1080" height="1920" fill="url(#${id}-mg)"/></mask>` : "") + `</defs>` +
+    clip("frame").map((i) => amText(i, null, out.edge)).join("") +
+    plain.map((i) => amText(i, i.fx === "melt" ? `url(#${id}-m)` : null)).join("") + `</svg>`;
+  if (out.flash !== undefined && t >= out.flash && t < out.flash + .25) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${1 - (t - out.flash) / .25}"></div>`;
+  return h;
+}
+// карточки фишек со значком: тот же хук на примере, верх кадра
+function amChips() {
+  const el = $("hookam"); el.innerHTML = "";
+  AMHOOKS.forEach(([v, name, hint, ex]) => {
+    const b = document.createElement("button");
+    b.className = "chip card am" + (cfg.hook === v ? " on" : "");
+    const acc = cfg.acc || "#F2C21B";
+    const out = AMLAY.amLayout({ kind: v, lead: ex.lead, title: ex.title, s: 0, e: 3, words: [], acc, hw: "long", pos: "top" }, amMeas);
+    const k = 64 / 1080;
+    const pic = amHtml(out, 2.99, "th-" + v, (f) => f === "neg" ? `<div style="position:absolute;inset:0;background:linear-gradient(#90704f,#463b33 55%,#3a5b80)"></div>` : AMPHOTO);
+    b.innerHTML = `<div class="th"><div class="cv" style="transform:scale(${k}) translate(0,-230px)">${pic}</div></div><div>${name}<small>${hint}</small></div>`;
+    b.onclick = () => { cfg.hook = v; haptic(); render(); seek(0); };
+    el.appendChild(b);
+  });
+}
+
 function subs(t, ACC) {
   const ph = PHRASES.find((p) => t >= p.s && t < p.e); if (!ph) return "";
   const s = cfg.sub, F = FONTS.find((f) => f[0] === s.font) || FONTS[0];
@@ -342,6 +802,7 @@ function insert(t) {
 
 function frame(t) {
   const BG = cfg.bg || "#F4EFE6", ACC = cfg.acc || "#E2C994", fx = cfg.fx || {};
+  const am = AMLAY.isAm(cfg.hook) && t < HOOK.end ? AMLAY.amLayout({ kind: cfg.hook, lead: HOOK.lead, title: HOOK.title, s: 0, e: HOOK.end, words: [], acc: ACC, hw: cfg.hw, pos: cfg.hpos }, amMeas) : null;
   const segs = [{ s: 0, e: HOOK.end, kind: cfg.hook, lead: HOOK.lead, title: HOOK.title, shape: [190, 700, 700, 700, 350, 350, 0] }];
   if (cfg.topic !== "none") segs.push({ s: TOPIC.at, e: TOPIC.end, kind: cfg.topic, lead: TOPIC.lead, title: TOPIC.title, shape: [150, 640, 780, 1000, 56, 56, 0] });
   const seg = segs.find((g) => t >= g.s && t < g.e);
@@ -354,6 +815,7 @@ function frame(t) {
     if (l) { const u = clamp((t - l.s) / (l.e - l.s)); const v = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2; z = l.k % 2 === 0 ? lerp(1, 1.09, v) : lerp(1.09, 1, v); } }
   if (fx.punch && !bgSeg) { const kw = PHRASES.flatMap((p) => p.w).find((w) => KEYS.has(w[0]) && t >= w[1] && t < w[1] + .9); if (kw) z *= 1 + .12 * (1 - Math.pow(clamp((t - kw[1]) / .9), 2)) * clamp((t - kw[1]) / .06); }
   if (seg && seg.kind === "plate") z *= 1 + .04 * ease((t - seg.s) / .5);
+  if (am && am.flash !== undefined && t >= am.flash) z *= am.zoom || 1.35;
   const sheet = bgSeg ? (bgSeg.kind === "white" ? "#fff" : BG) : "#000";
   let h = `<div style="position:absolute;inset:0;background:${sheet}"></div>`;
   const cards = bgSeg && fx.layer ? [0, 1] : [];
@@ -363,9 +825,10 @@ function frame(t) {
     <div style="position:absolute;left:${(box[2] - 1080) / 2}px;top:${(box[3] - 1920) / 2}px;width:1080px;height:1920px;transform:scale(${z});transform-origin:50% 48%">${PERSON}</div></div>`;
   if (bgSeg && bgSeg.kind === "white") h += cards.map((i) => { const k = backE((t - bgSeg.s - .35 - i * .2) / .45) * Math.min(1, ease((bgSeg.e - t) / .3)); const side = i ? 1 : -1;
     return `<div style="position:absolute;left:${side < 0 ? 40 : 780}px;top:${i ? 860 : 820}px;width:260px;height:260px;transform:rotate(${side * 8}deg) scale(${Math.max(0, k)})">${ICON}</div>`; }).join("");
-  if (seg && !bgSeg && seg.kind !== "plate") h += `<div style="position:absolute;left:0;right:0;top:0;height:900px;background:linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,0));opacity:${Math.min(ease((t - seg.s) / .3), ease((seg.e - t) / .3))}"></div>`;
-  if (seg) h += segText(seg.kind, seg.lead, seg.title, t - seg.s, seg.e, BG, ACC, t);
-  if (!(seg && ["hybrid", "white", "ladder", "hand", "type"].includes(seg.kind))) h += subs(t, ACC);
+  if (seg && !bgSeg && seg.kind !== "plate" && !AMLAY.isAm(seg.kind)) h += `<div style="position:absolute;left:0;right:0;top:0;height:900px;background:linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,0));opacity:${Math.min(ease((t - seg.s) / .3), ease((seg.e - t) / .3))}"></div>`;
+  if (am) h += amHtml(am, t, "pv", (f) => f === "neg" ? `<div style="position:absolute;inset:0;filter:invert(1);transform:scale(${z});transform-origin:50% 48%">${PERSON}</div>` : AMPHOTO);
+  else if (seg) h += segText(seg.kind, seg.lead, seg.title, t - seg.s, seg.e, BG, ACC, t);
+  if (!(seg && (["hybrid", "white", "ladder", "hand", "type"].includes(seg.kind) || AMLAY.isAm(seg.kind)))) h += subs(t, ACC);
   if (!bgSeg) h += insert(t);
   if (fx.emoji && t > .9 && t < HOOK.end) h += `<div style="position:absolute;left:470px;top:1330px;font-size:140px;transform:scale(${backE((t - .9) / .35)})">${HOOK.emoji}</div>`;
   if (fx.flash && cfg.topic !== "none" && Math.abs(t - TOPIC.at) < .22) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${.85 * (1 - Math.abs(t - TOPIC.at) / .22)}"></div>`;
@@ -402,6 +865,9 @@ if (inTg) {
   $("send").style.display = "block"; $("send").onclick = send;
 }
 render(); fit(); window.addEventListener("resize", fit);
+// шрифты превью грузятся по требованию: после загрузки пересчитать значки фишек
+Promise.all(["700 50px Oswald", "500 50px Manrope", "700 50px Caveat", "400 50px 'Rubik Spray Paint'", "800 50px Montserrat"]
+  .map((f) => document.fonts.load(f, "АБВабв"))).then(() => render(false), () => {});
 requestAnimationFrame(loop);
 </script>
 </body>
