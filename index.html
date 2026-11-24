@@ -63,7 +63,10 @@
   #amopts { display: none; }
   /* субтитры из разбора (24.11): пока выбран такой стиль, обычные настройки субтитров приглушены */
   .refnote { display: none; color: var(--btn); }
-  #subref .am > div:last-child { min-width: 0; overflow-wrap: anywhere; hyphens: auto; font-size: 14px; }
+  /* 24.11: карточки субтитров по три в ряд — пример крупно сверху, короткое имя снизу (длинные имена ломались по слогам) */
+  #subref .card.am, #hook .card.am { flex-direction: column; align-items: stretch; text-align: center; gap: 6px; padding: 6px; min-width: calc(33.3% - 6px); flex: 0 1 calc(33.3% - 6px); }
+  #subref .am .exv, #hook .am .exv { width: 100%; height: auto; aspect-ratio: 9 / 16; }
+  #subref .am > div:last-child, #hook .am > div:last-child { font-size: 13px; line-height: 1.2; }
   body.ref #refnote { display: block; }
   body.ref #s-sub > :not(h2):not(#refnote), body.ref #s-subanim > :not(h2) { opacity: .45; }
   /* авторский хук: на главном экране сверху крутится его пример (24.11, просьба Вадима) */
@@ -76,6 +79,7 @@
   #exbig video { width: min(78vw, 340px); aspect-ratio: 9 / 16; border-radius: 14px; background: #111; }
   #exbig div { color: #fff; font-size: 13px; opacity: .8; }
   pre.out { white-space: pre-wrap; word-break: break-all; font-size: 11px; background: var(--bg2); padding: 10px; border-radius: 12px; display: none; }
+  .later { display: none !important; }   /* 24.11: пока только хуки и субтитры (Вадим) — остальное вернётся карточками */
 </style>
 </head>
 <body>
@@ -86,10 +90,10 @@
 
 <div class="wrap">
   <h1>Свой стиль</h1>
-  <p class="sub">Собери стиль из кусков других стилей. Превью сверху показывает ролик по кругу: хук, субтитры, вставку, переход на тему.</p>
+  <p class="sub">Выбери хук и субтитры. Пример крутится сверху.</p>
 
-  <div class="lbl">Начать с готового набора</div>
-  <div class="presets" id="presets"></div>
+  <div class="lbl later">Начать с готового набора</div>
+  <div class="presets later" id="presets"></div>
 
   <div class="sec" id="s-hook"><h2>🪝 Хук</h2><p class="h">Как появляется заголовок в первые секунды.</p><div class="lbl">Стандартные</div><div class="chips" id="hook"></div>
     <div class="lbl">Авторские</div><div class="chips" id="hookam"></div>
@@ -97,10 +101,10 @@
       <div class="lbl">Где текст</div><div class="chips" id="hpos"></div></div>
   </div>
 
-  <div class="sec" id="s-ref"><h2>💬 Субтитры из разбора</h2><p class="h">13 стилей из роликов-референсов, все одобрены. Нажми — пример крутится сверху на видео. Шрифт, место и появление у каждого свои.</p>
+  <div class="sec" id="s-ref"><h2>💬 Субтитры</h2><p class="h">Нажми — пример крутится сверху. Нажми ещё раз — снять.</p>
     <div class="chips" id="subref"></div></div>
 
-  <div class="sec" id="s-sub"><h2>💬 Субтитры</h2><p class="h refnote" id="refnote">Сейчас выбран стиль из разбора — настройки ниже не действуют. Выбери любой шрифт или появление, чтобы вернуться к своим.</p><p class="h">Обычные пишутся одним шрифтом. В паре главные слова набраны вторым шрифтом.</p>
+  <div class="sec later" id="s-sub"><h2>💬 Субтитры</h2><p class="h refnote" id="refnote">Сейчас выбран стиль из разбора — настройки ниже не действуют. Выбери любой шрифт или появление, чтобы вернуться к своим.</p><p class="h">Обычные пишутся одним шрифтом. В паре главные слова набраны вторым шрифтом.</p>
     <div class="lbl">Обычные</div><div class="chips" id="font"></div>
     <div class="lbl">Пары шрифтов</div><div class="chips" id="fontpair"></div>
     <div class="lbl">Регистр</div><div class="chips" id="case"></div>
@@ -108,21 +112,21 @@
     <div class="lbl">Размер: <span id="sizev"></span></div><input type="range" id="size" min="0.8" max="1.4" step="0.05">
   </div>
 
-  <div class="sec" id="s-subanim"><h2>▶️ Появление субтитров</h2><p class="h">Как слова встают на экран.</p><div class="chips" id="subanim"></div></div>
+  <div class="sec later" id="s-subanim"><h2>▶️ Появление субтитров</h2><p class="h">Как слова встают на экран.</p><div class="chips" id="subanim"></div></div>
 
-  <div class="sec" id="s-color"><h2>🎨 Цвет</h2>
+  <div class="sec later" id="s-color"><h2>🎨 Цвет</h2>
     <div class="lbl">Основной: фон, плашка</div><div class="sw" id="bg"></div>
     <div class="lbl">Акцент: главные слова, вторая строка</div><div class="sw" id="acc"></div>
   </div>
 
-  <div class="sec" id="s-ins"><h2>🖼 Вставки</h2><p class="h">Фото, видео и 3D-иконки у лица. Иконки всегда вырезаны без рамки.</p>
+  <div class="sec later" id="s-ins"><h2>🖼 Вставки</h2><p class="h">Фото, видео и 3D-иконки у лица. Иконки всегда вырезаны без рамки.</p>
     <div class="lbl">Как выглядят</div><div class="chips" id="look"></div>
     <div class="lbl">Как появляются</div><div class="chips" id="insanim"></div>
   </div>
 
-  <div class="sec" id="s-topic"><h2>🔀 Переходы на темы</h2><p class="h">Что происходит, когда в речи начинается новая мысль.</p><div class="chips" id="topic"></div></div>
+  <div class="sec later" id="s-topic"><h2>🔀 Переходы на темы</h2><p class="h">Что происходит, когда в речи начинается новая мысль.</p><div class="chips" id="topic"></div></div>
 
-  <div class="sec" id="s-fx"><h2>✨ Фишки</h2><div id="fx"></div></div>
+  <div class="sec later" id="s-fx"><h2>✨ Фишки</h2><div id="fx"></div></div>
 
   <pre class="out" id="out"></pre>
 </div>
@@ -774,19 +778,19 @@ const HOOKS = [
 // субтитры из разбора 14 роликов (24.11.2026): имена = cs.sub.ref в StyleConstructor.tsx (RefSubs.tsx);
 // пример — кусок ролика 1 Вадима с этим стилем (ex_<стиль>.mp4 и постер ex_<стиль>.jpg рядом со страницей, Remotion: refdemo.mjs)
 const REFSUBS = [
-  ["s23", "Жирный курсив по слову", "одно слово под лицом, «отскок», лёгкая тень"],
-  ["s30", "Полужирный по слову", "крупное слово под лицом, «отскок»"],
-  ["s24", "Широкий капс столбиком", "слова встают в пустом месте из размытия"],
-  ["s25", "Две строки из серого в белый", "мелко слева, сказанное слово белеет"],
-  ["s26", "Блок с каллиграфией", "главное слово капсом или каллиграфией"],
-  ["s27", "Плакат: узкий капс и курсив", "крупное главное слово, рядом курсив"],
-  ["s28", "Тетрадь", "две строки слева, слово загорается"],
-  ["s29", "Обложка: жёлтое слово", "крупное жёлтое, мелкие строки сверху и снизу"],
-  ["s31", "Строка проявляется", "слова проступают, пока звучат"],
-  ["s32", "Строка подсвечивается", "до трёх строк слева, звучащая — тёплым цветом"],
-  ["s33", "Слово за словом с тенью", "строка под лицом копится по слову"],
-  ["s34", "Строки растут слева", "слова проявляются, блок до трёх строк"],
-  ["s36", "Подъём из размытия", "строка над головой, слова всплывают"],
+  ["s23", "Курсив по слову", ""],
+  ["s30", "Жирный по слову", ""],
+  ["s24", "Капс столбиком", ""],
+  ["s25", "Серый → белый", ""],
+  ["s26", "Каллиграфия", ""],
+  ["s27", "Плакат", ""],
+  ["s28", "Тетрадь", ""],
+  ["s29", "Жёлтое слово", ""],
+  ["s31", "Проявление", ""],
+  ["s32", "Подсветка", ""],
+  ["s33", "С тенью", ""],
+  ["s34", "Растут слева", ""],
+  ["s36", "Из размытия", ""],
 ];
 // фишки текста alex.amadeo (23.11.2026): имена = cs.hook в StyleConstructor.tsx; пример — подпись для значка
 const AMHOOKS = [
@@ -946,7 +950,7 @@ function render(full = true) {
     b.onclick = () => { cfg = clone(c); exOff = false; haptic(); render(); seek(0); };
     pr.appendChild(b);
   });
-  chips($("hook"), HOOKS, () => cfg.hook, (v) => (cfg.hook = v), 0, true);
+  stdChips();
   amChips();
   $("amopts").style.display = AMLAY.isAm(cfg.hook) ? "block" : "none";
   $("hwbox").style.display = AMLAY.AM_MAIN_WORD.includes(cfg.hook) ? "block" : "none";
@@ -1082,6 +1086,31 @@ function amHtml(out, t, id, under) {
 // карточки фишек: пример на ролике Вадима серии 1 из CapCut (зацикленное видео без звука, ex_<хук>.mp4 и постер ex_<хук>.jpg рядом со страницей, 24.11.2026);
 // карточки строятся один раз (иначе видео перезапускались бы на каждом выборе), дальше меняется только отметка
 // выбранной. Нажатие на видео — выбрать хук и показать пример крупно. Живое превью раскладки — в телефоне сверху
+// стандартные хуки (24.11.2026, Вадим: «настоящее видео, а не фейковое»): пример — хук из настоящего ролика Склейки этого стиля
+// на ролике 1 (ex_<хук>.mp4 и постер ex_<хук>.jpg, вырезаны из ~/Movies/Склейка — ролик 1 во всех стилях (24.11)).
+// «Печатная машинка» придумана для конструктора, настоящего стиля у неё нет — пока скрыта
+const STDHOOKS = [["hybrid", "Гибрид"], ["plate", "Стандартный"], ["ladder", "Минимализм"], ["hand", "Чистый"], ["white", "Белая карточка"]];
+const isExHook = (h) => AMLAY.isAm(h) || STDHOOKS.some((x) => x[0] === h);
+function stdChips() { exCards($("hook"), STDHOOKS, () => cfg.hook, (v) => { cfg.hook = v; exKind = "hook"; seek(0); }); }
+// карточки с зацикленным примером: строятся один раз (иначе видео перезапускались бы на каждом выборе), дальше меняется только отметка
+function exCards(el, list, get, pick) {
+  if (!el.dataset.built) {
+    el.dataset.built = "1";
+    const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => {
+      const vd = e.target; if (e.isIntersecting) vd.play().catch(() => {}); else vd.pause();
+    }), { threshold: 0.1 }) : null;
+    list.forEach(([v, name]) => {
+      const b = document.createElement("button");
+      b.className = "chip card am"; b.dataset.v = v;
+      b.innerHTML = `<div class="exv"><video src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline autoplay preload="metadata"></video></div><div>${name}</div>`;
+      const vd = b.querySelector("video"); vd.muted = true;
+      if (io) io.observe(vd);
+      b.onclick = () => { exOff = false; pick(v); haptic(); render(); };
+      el.appendChild(b);
+    });
+  }
+  el.querySelectorAll(".am").forEach((b) => b.classList.toggle("on", get() === b.dataset.v));
+}
 function amChips() {
   const el = $("hookam");
   if (!el.dataset.built) {
@@ -1114,10 +1143,10 @@ function refChips() {
       const b = document.createElement("button");
       b.className = "chip card am"; b.dataset.v = v;
       b.innerHTML = `<div class="exv"><video src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline autoplay preload="metadata"></video></div>` +
-        `<div>${name}<small>${hint}</small></div>`;
+        `<div>${name}</div>`;
       const vd = b.querySelector("video"); vd.muted = true;
       if (io) io.observe(vd);
-      b.onclick = () => { cfg.sub.ref = cfg.sub.ref === v ? "" : v; exOff = false; exKind = "ref"; haptic(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+      b.onclick = () => { cfg.sub.ref = cfg.sub.ref === v ? "" : v; exOff = false; exKind = "ref"; haptic(); render(); };
       el.appendChild(b);
     });
   }
@@ -1240,7 +1269,7 @@ function seek(sec) { if (typeof sec === "number") { t0 = performance.now() - sec
 let exOff = false, exKind = "hook";   // какой пример крутить сверху: хук или субтитры из разбора (что нажали последним)
 function exSync() {
   const vd = $("pvex");
-  const ex = exKind === "ref" && cfg.sub.ref ? cfg.sub.ref : AMLAY.isAm(cfg.hook) ? cfg.hook : cfg.sub.ref || null;
+  const ex = exKind === "ref" && cfg.sub.ref ? cfg.sub.ref : isExHook(cfg.hook) ? cfg.hook : cfg.sub.ref || null;
   const on = !!ex && !exOff;
   if (on) { const src = `ex_${ex}.mp4`; if (!vd.src.endsWith(src)) { vd.poster = `ex_${ex}.jpg`; vd.src = src; } vd.style.display = "block"; vd.muted = true; vd.play().catch(() => {}); }
   else if (vd.style.display !== "none") { vd.pause(); vd.style.display = "none"; }
