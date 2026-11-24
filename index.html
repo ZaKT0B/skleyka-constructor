@@ -58,6 +58,8 @@
   .am .th { flex: none; width: 64px; height: 68px; border-radius: 8px; overflow: hidden; position: relative; background: linear-gradient(#6f8fb0, #b9c4cc 55%, #c9a77c 75%, #5c6b4f); }
   .am .th .cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0; }
   #amopts { display: none; }
+  /* авторский хук: на главном экране сверху крутится его пример (24.11, просьба Вадима) */
+  #pvex { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; background: #000; }
   /* пример хука на настоящем ролике (24.11): зацикленное видео без звука вместо значка, по нажатию — крупно */
   .am .exv { flex: none; width: 60px; height: 107px; border-radius: 8px; overflow: hidden; background: #222; position: relative; }
   .am .exv video, .am .exv img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -70,7 +72,7 @@
 </head>
 <body>
 <div class="stage">
-  <div class="phone" id="phone"><div class="canvas" id="cv"></div></div>
+  <div class="phone" id="phone"><div class="canvas" id="cv"></div><video id="pvex" muted loop playsinline preload="none"></video></div>
   <div class="moment" id="moment"></div>
 </div>
 
@@ -81,8 +83,8 @@
   <div class="lbl">Начать с готового набора</div>
   <div class="presets" id="presets"></div>
 
-  <div class="sec" id="s-hook"><h2>🪝 Хук</h2><p class="h">Как появляется заголовок в первые секунды.</p><div class="chips" id="hook"></div>
-    <div class="lbl">Фишки текста alex.amadeo: крупное слово, мелкие слова, рукописный акцент. Каждое слово встаёт, когда его говоришь.</div><div class="chips" id="hookam"></div>
+  <div class="sec" id="s-hook"><h2>🪝 Хук</h2><p class="h">Как появляется заголовок в первые секунды.</p><div class="lbl">Стандартные</div><div class="chips" id="hook"></div>
+    <div class="lbl">Авторские</div><div class="chips" id="hookam"></div>
     <div id="amopts"><div id="hwbox"><div class="lbl">Главное слово заголовка (крупно)</div><div class="chips" id="hw"></div></div>
       <div class="lbl">Где текст</div><div class="chips" id="hpos"></div></div>
   </div>
@@ -807,7 +809,7 @@ const PRESETS = [
   ["Как Белая карточка", "белый лист, арка", { hook: "white", topic: "white", bg: "#F4EFE6", acc: "#E5322D", sub: { font: "manrope", anim: "blur", case: "lower", size: 1, color: "#FFFFFF" }, ins: { look: "round", anim: "pop" }, fx: { layer: true } }],
   ["Как Минимализм", "лесенка, тонко", { hook: "ladder", topic: "none", bg: "#171717", acc: "#E2C994", sub: { font: "sf", anim: "karaoke", case: "lower", size: 0.9, color: "#F7F2E8" }, ins: { look: "cut", anim: "blur" }, fx: { zoom: true } }],
   ["Как Чистый", "от руки, спокойно", { hook: "hand", topic: "none", bg: "#F4EFE6", acc: "#D6BF9C", sub: { font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, ins: { look: "cut", anim: "blur" }, fx: {} }],
-  ["Как alex.amadeo", "крупный Druk, рукописный акцент", { hook: "am_two", hw: "long", hpos: "top", topic: "none", bg: "#171717", acc: "#F2C21B", sub: { font: "mont", anim: "one", case: "lower", size: 1, color: "#FFFFFF" }, ins: { look: "cut", anim: "pop" }, fx: { zoom: true, punch: true } }],
+  ["Авторский", "крупное слово, рукописный акцент", { hook: "am_two", hw: "long", hpos: "top", topic: "none", bg: "#171717", acc: "#F2C21B", sub: { font: "mont", anim: "one", case: "lower", size: 1, color: "#FFFFFF" }, ins: { look: "cut", anim: "pop" }, fx: { zoom: true, punch: true } }],
   ["Микс", "плашка + гибрид + белая", { hook: "plate", topic: "hybrid", bg: "#1F6FE0", acc: "#F2C62A", sub: { font: "bebas", anim: "pop", case: "upper", size: 1.1, color: "#FFFFFF" }, ins: { look: "polaroid", anim: "drop" }, fx: { zoom: true, punch: true, flash: true, layer: true, emoji: true } }],
 ];
 
@@ -872,7 +874,7 @@ function render(full = true) {
   PRESETS.forEach(([name, hint, c]) => {
     const b = document.createElement("button"); b.className = "preset";
     b.innerHTML = `<b>${name}</b><small>${hint}</small>`;
-    b.onclick = () => { cfg = clone(c); haptic(); render(); seek(0); };
+    b.onclick = () => { cfg = clone(c); exOff = false; haptic(); render(); seek(0); };
     pr.appendChild(b);
   });
   chips($("hook"), HOOKS, () => cfg.hook, (v) => (cfg.hook = v), 0, true);
@@ -890,6 +892,7 @@ function render(full = true) {
   chips($("insanim"), INSANIM, () => cfg.ins.anim, (v) => (cfg.ins.anim = v), 3.4);
   chips($("topic"), TOPICS, () => cfg.topic, (v) => (cfg.topic = v), 5.3, true);
   toggles();
+  exSync();
   try { localStorage.setItem("skl_cs", JSON.stringify(cfg)); } catch (e) {}
   $("out").textContent = JSON.stringify(cfg);
 }
@@ -1009,10 +1012,10 @@ function amChips() {
       const b = document.createElement("button");
       b.className = "chip card am"; b.dataset.v = v;
       b.innerHTML = `<div class="exv"><video src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline autoplay preload="metadata"></video></div>` +
-        `<div>${name}<small>${hint} · слов: ${AMLAY.amWords(v)}</small><small class="ex">▶ пример на ролике</small></div>`;
+        `<div>${name}</div>`;
       const vd = b.querySelector("video"); vd.muted = true;
       if (io) io.observe(vd);
-      b.onclick = (e) => { cfg.hook = v; haptic(); render(); seek(0); if (e.target.closest(".exv, small.ex")) amBig(v); };
+      b.onclick = () => { cfg.hook = v; exOff = false; haptic(); render(); seek(0); };
       el.appendChild(b);
     });
   }
@@ -1022,7 +1025,7 @@ function amBig(v) {
   let o = $("exbig");
   if (!o) {
     o = document.createElement("div"); o.id = "exbig";
-    o.innerHTML = `<video muted loop playsinline autoplay></video><div>пример на ролике · нажми, чтобы закрыть</div>`;
+    o.innerHTML = `<video muted loop playsinline autoplay></video><div>нажми, чтобы закрыть</div>`;
     o.onclick = () => { o.style.display = "none"; o.querySelector("video").pause(); };
     document.body.appendChild(o);
   }
@@ -1111,14 +1114,21 @@ function frame(t) {
 const MOMENTS = [[0, "хук"], [HOOK.end, "субтитры"], [INS.at, "вставка"], [TOPIC.at, "переход на тему"], [TOPIC.end, "субтитры"]];
 let t0 = performance.now(), last = 0;
 const FREEZE = parseFloat(new URLSearchParams(location.search).get("t"));   // для проверки: ?t=5.6 — стоп-кадр
-function seek(sec) { if (typeof sec === "number") t0 = performance.now() - sec * 1000; }
+function seek(sec) { if (typeof sec === "number") { t0 = performance.now() - sec * 1000; if (sec >= HOOK.end) { exOff = true; exSync(); } } }
+// авторский хук выбран — на главном экране его пример; любая другая настройка (субтитры, вставки…) возвращает живое превью
+let exOff = false;
+function exSync() {
+  const vd = $("pvex"), on = AMLAY.isAm(cfg.hook) && !exOff;
+  if (on) { const src = `ex_${cfg.hook}.mp4`; if (!vd.src.endsWith(src)) { vd.poster = `ex_${cfg.hook}.jpg`; vd.src = src; } vd.style.display = "block"; vd.muted = true; vd.play().catch(() => {}); }
+  else if (vd.style.display !== "none") { vd.pause(); vd.style.display = "none"; }
+}
 function fit() { const ph = $("phone"); $("cv").style.transform = `scale(${ph.clientWidth / 1080})`; }
 function loop(now) {
   if (now - last > 30) {
     last = now;
     const t = isNaN(FREEZE) ? ((now - t0) / 1000) % DUR : FREEZE;
     $("cv").innerHTML = frame(t);
-    $("moment").textContent = "▶ " + [...MOMENTS].reverse().find((m) => t >= m[0])[1];
+    $("moment").textContent = "▶ " + ($("pvex").style.display === "block" ? "хук" : [...MOMENTS].reverse().find((m) => t >= m[0])[1]);
   }
   requestAnimationFrame(loop);
 }
