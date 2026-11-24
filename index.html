@@ -64,9 +64,9 @@
   /* субтитры из разбора (24.11): пока выбран такой стиль, обычные настройки субтитров приглушены */
   .refnote { display: none; color: var(--btn); }
   /* 24.11: карточки субтитров по три в ряд — пример крупно сверху, короткое имя снизу (длинные имена ломались по слогам) */
-  #subref .card.am, #hook .card.am { flex-direction: column; align-items: stretch; text-align: center; gap: 6px; padding: 6px; min-width: calc(33.3% - 6px); flex: 0 1 calc(33.3% - 6px); }
-  #subref .am .exv, #hook .am .exv { width: 100%; height: auto; aspect-ratio: 9 / 16; }
-  #subref .am > div:last-child, #hook .am > div:last-child { font-size: 13px; line-height: 1.2; }
+  #subref .card.am, #hook .card.am, #look .card.am, #insanim .card.am { flex-direction: column; align-items: stretch; text-align: center; gap: 6px; padding: 6px; min-width: calc(33.3% - 6px); flex: 0 1 calc(33.3% - 6px); }
+  #subref .am .exv, #hook .am .exv, #look .am .exv, #insanim .am .exv { width: 100%; height: auto; aspect-ratio: 9 / 16; }
+  #subref .am > div:last-child, #hook .am > div:last-child, #look .am > div:last-child, #insanim .am > div:last-child { font-size: 13px; line-height: 1.2; }
   body.ref #refnote { display: block; }
   body.ref #s-sub > :not(h2):not(#refnote), body.ref #s-subanim > :not(h2) { opacity: .45; }
   /* авторский хук: на главном экране сверху крутится его пример (24.11, просьба Вадима) */
@@ -119,9 +119,9 @@
     <div class="lbl">Акцент: главные слова, вторая строка</div><div class="sw" id="acc"></div>
   </div>
 
-  <div class="sec later" id="s-ins"><h2>🖼 Вставки</h2><p class="h">Фото, видео и 3D-иконки у лица. Иконки всегда вырезаны без рамки.</p>
-    <div class="lbl">Как выглядят</div><div class="chips" id="look"></div>
-    <div class="lbl">Как появляются</div><div class="chips" id="insanim"></div>
+  <div class="sec" id="s-ins"><h2>🖼 Вставки</h2><p class="h">Твои фото и видео сбоку от лица. В примере стекло вместо фото. 3D-иконки всегда вырезаны, без рамки.</p>
+    <div class="lbl">Как выглядит</div><div class="chips" id="look"></div>
+    <div class="lbl">Как появляется</div><div class="chips" id="insanim"></div>
   </div>
 
   <div class="sec later" id="s-topic"><h2>🔀 Переходы на темы</h2><p class="h">Что происходит, когда в речи начинается новая мысль.</p><div class="chips" id="topic"></div></div>
@@ -852,7 +852,7 @@ function subFont(id) {
 const fcss = (F, px) => `font-family:${F[2]};font-weight:${F[3]};font-size:${Math.round(px)}px;${F[6] ? "font-style:italic;" : ""}${F[5] ? "text-transform:uppercase;" : ""}`;
 const CASES = [["lower", "строчные"], ["upper", "КАПС"], ["asis", "Как сказано"]];
 const LOOKS = [["frame", "Белая рамка"], ["cut", "Без рамки"], ["round", "Скруглённые"], ["polaroid", "Полароид"], ["circle", "Круг"]];
-const INSANIM = [["pop", "Выпрыгивает"], ["slide", "Выезжает сбоку"], ["blur", "Из размытия"], ["drop", "Падает сверху"], ["flip", "Переворот"], ["swing", "Качается"]];
+const INSANIM = [["pop", "Выпрыгивает"], ["slide", "Выезжает сбоку"], ["blur", "Из размытия"], ["drop", "Падает сверху"], ["flip", "Переворот"], ["swing", "Качается"], ["rise", "Подъём и зум"], ["card", "Визитка"], ["shoulder", "Карточка за плечом"], ["float", "Плывёт с тенью"], ["bgswap", "Фон за тобой"], ["space", "Фотопространство"], ["warp", "Цифровое искажение"], ["ink", "Чернильный дым"], ["obj", "Объект над головой"], ["strip", "Лента карточек"], ["halo", "Нимб из фото"], ["arch", "Арка из фото"], ["burst", "Разлёт фото"], ["shape", "Ты в квадрате"], ["carousel", "Карусель"], ["tiles", "Кольцо плиток"], ["magic", "Магия карт"]];
 const FX = [
   ["zoom", "Медленные наезды", "кадр сам приближается и отдаляется"],
   ["punch", "Резкий наезд", "на главных словах"],
@@ -964,8 +964,8 @@ function render(full = true) {
   fontChips($("fontpair"), PAIRS, true);
   chips($("case"), CASES, () => cfg.sub.case, (v) => (cfg.sub.case = v), 2.6);
   $("size").value = cfg.sub.size; $("sizev").textContent = Math.round(cfg.sub.size * 100) + " %";
-  chips($("look"), LOOKS, () => cfg.ins.look, (v) => (cfg.ins.look = v), 3.4);
-  chips($("insanim"), INSANIM, () => cfg.ins.anim, (v) => (cfg.ins.anim = v), 3.4);
+  exCards($("look"), INSLOOK, () => cfg.ins.look, (v) => { cfg.ins.look = v; exKind = "il"; }, "il_");     // вставки — карточки с примером (24.11.2026)
+  exCards($("insanim"), INSANIMC, () => cfg.ins.anim, (v) => { cfg.ins.anim = v; exKind = "ia"; }, "ia_");
   chips($("topic"), TOPICS, () => cfg.topic, (v) => (cfg.topic = v), 5.3, true);
   toggles();
   exSync();
@@ -1089,6 +1089,10 @@ function amHtml(out, t, id, under) {
 // стандартные хуки (24.11.2026, Вадим: «настоящее видео, а не фейковое»): пример — хук из настоящего ролика Склейки этого стиля
 // на ролике 1 (ex_<хук>.mp4 и постер ex_<хук>.jpg, вырезаны из ~/Movies/Склейка — ролик 1 во всех стилях (24.11)).
 // «Печатная машинка» придумана для конструктора, настоящего стиля у неё нет — пока скрыта
+// вставки: только то, что по-настоящему умеет StyleConstructor.tsx; примеры — ролик 1 со стеклом вместо фото (tools_exins.py);
+// «Подъём и зум» и дальше — эффекты «за спиной» по разбору r07qxo (25.11.2026), примеры — одобренные пробы на ролике Вадима PMR00093, без звука
+const INSLOOK = [["frame", "Белая рамка"], ["cut", "Без рамки"], ["round", "Скруглённые"], ["polaroid", "Полароид"], ["circle", "Круг"]];
+const INSANIMC = [["pop", "Выпрыгивает"], ["slide", "Сбоку"], ["blur", "Из размытия"], ["drop", "Сверху"], ["flip", "Переворот"], ["swing", "Качается"], ["rise", "Подъём и зум"], ["card", "Визитка"], ["shoulder", "Карточка за плечом"], ["float", "Плывёт с тенью"], ["bgswap", "Фон за тобой"], ["space", "Фотопространство"], ["warp", "Цифровое искажение"], ["ink", "Чернильный дым"], ["obj", "Объект над головой"], ["strip", "Лента карточек"], ["halo", "Нимб из фото"], ["arch", "Арка из фото"], ["burst", "Разлёт фото"], ["shape", "Ты в квадрате"], ["carousel", "Карусель"], ["tiles", "Кольцо плиток"], ["magic", "Магия карт"]];
 const STDHOOKS = [["hybrid", "Гибрид"], ["plate", "Стандартный"], ["ladder", "Минимализм"], ["hand", "Чистый"], ["white", "Белая карточка"]];
 const isExHook = (h) => AMLAY.isAm(h) || STDHOOKS.some((x) => x[0] === h);
 function stdChips() { exCards($("hook"), STDHOOKS, () => cfg.hook, (v) => { cfg.hook = v; exKind = "hook"; seek(0); }); }
@@ -1101,14 +1105,14 @@ function exIO() {
   }), { threshold: 0.1, rootMargin: "150px 0px" });
 }
 // карточки с зацикленным примером: строятся один раз (иначе видео перезапускались бы на каждом выборе), дальше меняется только отметка
-function exCards(el, list, get, pick) {
+function exCards(el, list, get, pick, pre = "") {
   if (!el.dataset.built) {
     el.dataset.built = "1";
     const io = exIO();
     list.forEach(([v, name]) => {
       const b = document.createElement("button");
       b.className = "chip card am"; b.dataset.v = v;
-      b.innerHTML = `<div class="exv"><video data-src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline preload="none"></video></div><div>${name}</div>`;
+      b.innerHTML = `<div class="exv"><video data-src="ex_${pre}${v}.mp4" poster="ex_${pre}${v}.jpg" muted loop playsinline preload="none"></video></div><div>${name}</div>`;
       const vd = b.querySelector("video"); vd.muted = true;
       if (io) io.observe(vd); else { vd.src = vd.dataset.src; vd.play().catch(() => {}); }
       b.onclick = () => { exOff = false; pick(v); haptic(); render(); };
@@ -1271,7 +1275,8 @@ function seek(sec) { if (typeof sec === "number") { t0 = performance.now() - sec
 let exOff = false, exKind = "hook";   // какой пример крутить сверху: хук или субтитры из разбора (что нажали последним)
 function exSync() {
   const vd = $("pvex");
-  const ex = exKind === "ref" && cfg.sub.ref ? cfg.sub.ref : isExHook(cfg.hook) ? cfg.hook : cfg.sub.ref || null;
+  const ex = exKind === "il" ? "il_" + cfg.ins.look : exKind === "ia" ? "ia_" + cfg.ins.anim :
+    exKind === "ref" && cfg.sub.ref ? cfg.sub.ref : isExHook(cfg.hook) ? cfg.hook : cfg.sub.ref || null;
   const on = !!ex && !exOff;
   if (on) { const src = `ex_${ex}.mp4`; if (!vd.src.endsWith(src)) { vd.poster = `ex_${ex}.jpg`; vd.src = src; } vd.style.display = "block"; vd.muted = true; vd.play().catch(() => {}); }
   else if (vd.style.display !== "none") { vd.pause(); vd.style.display = "none"; }
@@ -1282,7 +1287,7 @@ function loop(now) {
     last = now;
     const t = isNaN(FREEZE) ? ((now - t0) / 1000) % DUR : FREEZE;
     $("cv").innerHTML = frame(t);
-    $("moment").textContent = "▶ " + ($("pvex").style.display === "block" ? "хук" : [...MOMENTS].reverse().find((m) => t >= m[0])[1]);
+    $("moment").textContent = "▶ " + ($("pvex").style.display === "block" ? (exKind === "il" || exKind === "ia" ? "вставка" : exKind === "ref" ? "субтитры" : "хук") : [...MOMENTS].reverse().find((m) => t >= m[0])[1]);
   }
   requestAnimationFrame(loop);
 }
