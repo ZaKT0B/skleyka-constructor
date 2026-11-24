@@ -1092,19 +1092,25 @@ function amHtml(out, t, id, under) {
 const STDHOOKS = [["hybrid", "Гибрид"], ["plate", "Стандартный"], ["ladder", "Минимализм"], ["hand", "Чистый"], ["white", "Белая карточка"]];
 const isExHook = (h) => AMLAY.isAm(h) || STDHOOKS.some((x) => x[0] === h);
 function stdChips() { exCards($("hook"), STDHOOKS, () => cfg.hook, (v) => { cfg.hook = v; exKind = "hook"; seek(0); }); }
+// видео карточек грузится только когда карточка рядом с экраном (24.11.2026: раньше при открытии качались все 28 примеров, ~9 МБ — долго в Telegram)
+function exIO() {
+  if (!("IntersectionObserver" in window)) return null;
+  return new IntersectionObserver((es) => es.forEach((e) => {
+    const vd = e.target;
+    if (e.isIntersecting) { if (!vd.getAttribute("src")) vd.src = vd.dataset.src; vd.play().catch(() => {}); } else vd.pause();
+  }), { threshold: 0.1, rootMargin: "150px 0px" });
+}
 // карточки с зацикленным примером: строятся один раз (иначе видео перезапускались бы на каждом выборе), дальше меняется только отметка
 function exCards(el, list, get, pick) {
   if (!el.dataset.built) {
     el.dataset.built = "1";
-    const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => {
-      const vd = e.target; if (e.isIntersecting) vd.play().catch(() => {}); else vd.pause();
-    }), { threshold: 0.1 }) : null;
+    const io = exIO();
     list.forEach(([v, name]) => {
       const b = document.createElement("button");
       b.className = "chip card am"; b.dataset.v = v;
-      b.innerHTML = `<div class="exv"><video src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline autoplay preload="metadata"></video></div><div>${name}</div>`;
+      b.innerHTML = `<div class="exv"><video data-src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline preload="none"></video></div><div>${name}</div>`;
       const vd = b.querySelector("video"); vd.muted = true;
-      if (io) io.observe(vd);
+      if (io) io.observe(vd); else { vd.src = vd.dataset.src; vd.play().catch(() => {}); }
       b.onclick = () => { exOff = false; pick(v); haptic(); render(); };
       el.appendChild(b);
     });
@@ -1115,16 +1121,14 @@ function amChips() {
   const el = $("hookam");
   if (!el.dataset.built) {
     el.dataset.built = "1";
-    const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => {
-      const vd = e.target; if (e.isIntersecting) vd.play().catch(() => {}); else vd.pause();
-    }), { threshold: 0.1 }) : null;
+    const io = exIO();
     AMHOOKS.forEach(([v, name, hint]) => {
       const b = document.createElement("button");
       b.className = "chip card am"; b.dataset.v = v;
-      b.innerHTML = `<div class="exv"><video src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline autoplay preload="metadata"></video></div>` +
+      b.innerHTML = `<div class="exv"><video data-src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline preload="none"></video></div>` +
         `<div>${name}</div>`;
       const vd = b.querySelector("video"); vd.muted = true;
-      if (io) io.observe(vd);
+      if (io) io.observe(vd); else { vd.src = vd.dataset.src; vd.play().catch(() => {}); }
       b.onclick = () => { cfg.hook = v; exOff = false; exKind = "hook"; haptic(); render(); seek(0); };
       el.appendChild(b);
     });
@@ -1136,16 +1140,14 @@ function refChips() {
   const el = $("subref");
   if (!el.dataset.built) {
     el.dataset.built = "1";
-    const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => {
-      const vd = e.target; if (e.isIntersecting) vd.play().catch(() => {}); else vd.pause();
-    }), { threshold: 0.1 }) : null;
+    const io = exIO();
     REFSUBS.forEach(([v, name, hint]) => {
       const b = document.createElement("button");
       b.className = "chip card am"; b.dataset.v = v;
-      b.innerHTML = `<div class="exv"><video src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline autoplay preload="metadata"></video></div>` +
+      b.innerHTML = `<div class="exv"><video data-src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline preload="none"></video></div>` +
         `<div>${name}</div>`;
       const vd = b.querySelector("video"); vd.muted = true;
-      if (io) io.observe(vd);
+      if (io) io.observe(vd); else { vd.src = vd.dataset.src; vd.play().catch(() => {}); }
       b.onclick = () => { cfg.sub.ref = cfg.sub.ref === v ? "" : v; exOff = false; exKind = "ref"; haptic(); render(); };
       el.appendChild(b);
     });
