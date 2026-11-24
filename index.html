@@ -58,6 +58,13 @@
   .am .th { flex: none; width: 64px; height: 68px; border-radius: 8px; overflow: hidden; position: relative; background: linear-gradient(#6f8fb0, #b9c4cc 55%, #c9a77c 75%, #5c6b4f); }
   .am .th .cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0; }
   #amopts { display: none; }
+  /* пример хука на настоящем ролике (24.11): зацикленное видео без звука вместо значка, по нажатию — крупно */
+  .am .exv { flex: none; width: 60px; height: 107px; border-radius: 8px; overflow: hidden; background: #222; position: relative; }
+  .am .exv video, .am .exv img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .am small.ex { color: var(--btn); margin-top: 3px; }
+  #exbig { position: fixed; inset: 0; background: rgba(0,0,0,.82); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; z-index: 50; }
+  #exbig video { width: min(78vw, 340px); aspect-ratio: 9 / 16; border-radius: 14px; background: #111; }
+  #exbig div { color: #fff; font-size: 13px; opacity: .8; }
   pre.out { white-space: pre-wrap; word-break: break-all; font-size: 11px; background: var(--bg2); padding: 10px; border-radius: 12px; display: none; }
 </style>
 </head>
@@ -111,7 +118,9 @@
 "use strict";
 var AMLAY = (() => {
   var __defProp = Object.defineProperty;
+  var __defProps = Object.defineProperties;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getOwnPropSymbols = Object.getOwnPropertySymbols;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
@@ -128,6 +137,7 @@ var AMLAY = (() => {
       }
     return a;
   };
+  var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
   var __export = (target, all) => {
     for (var name in all)
       __defProp(target, name, { get: all[name], enumerable: true });
@@ -146,22 +156,51 @@ var AMLAY = (() => {
   var amadeoLayout_exports = {};
   __export(amadeoLayout_exports, {
     AM_KINDS: () => AM_KINDS,
+    AM_LIMIT: () => AM_LIMIT,
     AM_MAIN_WORD: () => AM_MAIN_WORD,
     AM_STEP: () => AM_STEP,
     amLayout: () => amLayout,
+    amWords: () => amWords,
     isAm: () => isAm,
     pickMain: () => pickMain
   });
   var AM_KINDS = ["am_two", "am_side", "am_frame", "am_flash", "am_fonts", "am_neg", "am_tall", "am_letter", "am_melt"];
   var isAm = (k) => !!k && k.slice(0, 3) === "am_";
   var AM_MAIN_WORD = ["am_two", "am_side", "am_fonts", "am_neg"];
-  var CX = 540;
+  var AM_LIMIT = {
+    am_two: { lead: 2, title: 2 },
+    // два мелких над краями + главное + рукописный акцент = 4
+    am_side: { lead: 3, title: 2, total: 4 },
+    // крупное + три строки = до 4 связок (строки — мелкая строка и остаток заголовка)
+    am_frame: { lead: 3, title: 2 },
+    // мелкая строка до 3 + кадр в буквах 1–2 = до 5
+    am_flash: { lead: 3, title: 2 },
+    am_fonts: { lead: 3, title: 2 },
+    // мелкая строка + слово со сменой шрифтов (+ слово под ним) = до 5
+    am_neg: { lead: 2, title: 2 },
+    // строка Benzin + негатив + рукописное = до 4
+    am_tall: { lead: 2, title: 2 },
+    // вытянутое 1–2 + рукописное 1–2 = до 4
+    am_letter: { lead: 3, title: 2 },
+    // строка над стопкой + два слова стопкой = до 5
+    am_melt: { lead: 2, title: 2 }
+    // тающее 1–2 + рукописное 1–2 = до 4
+  };
+  var amWords = (k) => {
+    var _a;
+    const l = AM_LIMIT[k];
+    return l ? `\u0434\u043E ${(_a = l.total) != null ? _a : l.lead + l.title}` : "";
+  };
   var W_MAIN = 930;
   var TOP = 285;
   var LOW_BOT = 1330;
   var SAFE_TOP = 245;
+  var SAFE_L = 70;
+  var SAFE_R = 1010;
   var SMALL_CAP = 60;
   var CAP_MAX = 360;
+  var LOW_MAX = 1590;
+  var BTN_X = 861;
   var LS_SMALL = -0.1;
   var LS_SCRIPT = -0.05;
   var AM_STEP = 2 / 30;
@@ -180,6 +219,66 @@ var AMLAY = (() => {
     return r > 170 && g < 120 && b < 120;
   };
   var alt = (acc) => hot(acc) ? YEL : RED;
+  var GLUE = /* @__PURE__ */ new Set([
+    "\u0438",
+    "\u0430",
+    "\u043D\u043E",
+    "\u0432",
+    "\u0432\u043E",
+    "\u043D\u0430",
+    "\u0441",
+    "\u0441\u043E",
+    "\u043A",
+    "\u043A\u043E",
+    "\u043F\u043E",
+    "\u0434\u043E",
+    "\u0437\u0430",
+    "\u0438\u0437",
+    "\u043E\u0442",
+    "\u043E",
+    "\u043E\u0431",
+    "\u0443",
+    "\u0431\u0435\u0437",
+    "\u0434\u043B\u044F",
+    "\u043F\u0440\u043E",
+    "\u043F\u043E\u0434",
+    "\u043D\u0430\u0434",
+    "\u043F\u0440\u0438",
+    "\u0447\u0435\u0440\u0435\u0437",
+    "\u043D\u0435",
+    "\u043D\u0438",
+    "the",
+    "a",
+    "an",
+    "and",
+    "to",
+    "of",
+    "in",
+    "on",
+    "at",
+    "for",
+    "not"
+  ]);
+  var units = (ws) => {
+    const u = [];
+    let pend = "";
+    for (const w of ws) {
+      const n = norm(w);
+      if (GLUE.has(n) || /^[0-9]+$/.test(n)) {
+        pend += (pend ? " " : "") + w;
+        continue;
+      }
+      u.push(pend ? pend + " " + w : w);
+      pend = "";
+    }
+    if (pend) {
+      if (u.length) u[u.length - 1] += " " + pend;
+      else u.push(pend);
+    }
+    return u;
+  };
+  var trim = (ws, n, keep) => ws.length > n ? keep === "end" ? ws.slice(ws.length - n) : ws.slice(0, n) : ws.slice();
+  var noScript = (t) => /[0-9]/.test(t);
   function pickMain(tw, hw = "long") {
     if (!tw.length) return 0;
     if (hw === "first") return 0;
@@ -210,269 +309,375 @@ var AMLAY = (() => {
     return best;
   }
   function amLayout(inp, M) {
-    var _a, _b;
+    var _a;
     const { s, e } = inp, D = Math.max(0.6, e - s);
     const acc = inp.acc || YEL;
-    const lw = splitW(inp.lead).map(low);
-    const tw = splitW(inp.title).map((w) => w.toUpperCase());
+    const kind = AM_KINDS.includes(inp.kind) ? inp.kind : "am_two";
+    const lim = AM_LIMIT[kind];
+    const lw = trim(units(splitW(inp.lead).map(low)), lim.lead, "end");
+    const tw = trim(units(splitW(inp.title).map((w) => w.toUpperCase())), lim.title, "start");
     const mi = pickMain(tw, inp.hw);
     const MAIN = (_a = tw[mi]) != null ? _a : "";
-    const REST = tw.filter((_, i) => i !== mi);
-    const items = [];
-    let tMain = s, flash, zoom, edge;
+    const BEFORE = tw.slice(0, mi).map((w) => w.toLowerCase()), AFTER = tw.slice(mi + 1).map((w) => w.toLowerCase());
     const spoken = (inp.words || []).filter((w) => w.s >= s - 0.05 && w.s < e + 0.3);
-    const used = /* @__PURE__ */ new Set();
-    const tm = (word, frac) => {
-      const last = e - 0.4;
-      if (word) {
-        const n = norm(word);
-        const i = spoken.findIndex((w, k) => !used.has(k) && n.length > 0 && norm(w.w) === n);
-        if (i >= 0) {
-          used.add(i);
-          return Math.max(s, Math.min(spoken[i].s, last));
-        }
-      }
-      return Math.max(s, Math.min(s + frac * D, last));
-    };
-    const capOf = (f, px) => M(f, "\u041D", px).asc;
-    const fitPx = (f, text, W, capMax, probe) => {
-      const m = M(f, text, 100);
-      const a = probe === "" ? m.asc : M(f, probe != null ? probe : "\u041D", 100).asc;
+    const capOf = (f2, px) => M(f2, "\u041D", px).asc;
+    const fitPx = (f2, text, W, capMax, probe) => {
+      const m = M(f2, text, 100);
+      const a = probe === "" ? m.asc : M(f2, probe != null ? probe : "\u041D", 100).asc;
       return Math.min(100 * W / Math.max(1, m.w), 100 * capMax / Math.max(1, a));
     };
-    const smallPx = 100 * SMALL_CAP / Math.max(1, M("cera", "\u0410\u0430\u0431", 100).asc);
-    const put = (runs, at, o) => {
-      var _a2, _b2, _c, _d;
-      const ls = (_a2 = o.ls) != null ? _a2 : 0;
-      let w = 0, l = 0, asc = 0, desc = 0;
-      runs.forEach((r, i) => {
-        var _a3;
-        const m = M(r.f, r.t, r.px);
-        const n = [...r.t].length - (i === runs.length - 1 ? 1 : 0);
-        const extra = ls * r.px * Math.max(0, n);
-        if (runs.length === 1) {
-          w = m.w + extra;
-          l = m.l;
-        } else {
-          w += m.adv + extra + ((_a3 = r.dx) != null ? _a3 : 0);
-          if (i === 0) l = m.l;
-        }
-        asc = Math.max(asc, m.asc);
-        desc = Math.max(desc, m.desc);
-      });
-      const left = o.cx !== void 0 ? o.cx - w / 2 : o.right !== void 0 ? o.right - w : (_b2 = o.x) != null ? _b2 : 0;
-      const sy = (_c = o.sy) != null ? _c : 1;
-      const it = {
-        at,
-        until: (_d = o.until) != null ? _d : e,
-        x: left + l,
-        y: o.base,
-        runs,
-        ls,
-        stroke: o.stroke,
-        sy,
-        fx: o.fx,
-        top: o.base - asc * sy,
-        bot: o.base + desc,
-        left,
-        w
-      };
-      items.push(it);
-      return it;
-    };
-    const small = (t, at, o) => {
-      let px = smallPx;
-      const w = M("cera", t, px).w + LS_SMALL * px * ([...t].length - 1);
-      if (o.maxW && w > o.maxW) px *= o.maxW / w;
-      return put([{ t, f: "cera", px, fill: WHITE }], at, __spreadValues({ ls: LS_SMALL, stroke: true }, o));
-    };
-    const script = (t, W, capMax) => fitPx("script", t, W, capMax, "");
-    const titleLines = (capMax) => {
-      if (tw.length < 2) return [tw.join(" ")];
-      const one = fitPx("druk", tw.join(" "), W_MAIN, capMax);
-      if (capOf("druk", one) >= 170) return [tw.join(" ")];
-      return balance(tw, 2);
-    };
-    const leadLine = (at) => lw.length ? small(lw.join(" "), at, { cx: CX, base: TOP + SMALL_CAP, maxW: W_MAIN }) : void 0;
-    switch (inp.kind) {
-      case "am_two": {
-        const L = [...lw];
-        let hand = REST.join(" ").toLowerCase();
-        if (!hand && L.length >= 3) hand = L.pop();
-        const nL = Math.ceil(L.length / 2);
-        const sL = L.slice(0, nL).join(" "), sR = L.slice(nL).join(" ");
-        const px = fitPx("druk", MAIN, W_MAIN, CAP_MAX), cap = capOf("druk", px), mw = M("druk", MAIN, px).w, mx = CX - mw / 2;
-        const sb = TOP + SMALL_CAP, mb = sb + 7 + cap;
-        const tL = tm(L[0], 0), tR = Math.max(tL, tm(L[nL], 0.15));
-        tMain = Math.max(tR, tm(MAIN, 0.35));
-        const wL = sL ? M("cera", sL, smallPx).w : 0, wR = sR ? M("cera", sR, smallPx).w : 0;
-        const k = wL + wR > mw - 60 ? (mw - 60) / (wL + wR) : 1;
-        if (sL) put([{ t: sL, f: "cera", px: smallPx * k, fill: WHITE }], tL, { x: mx + 6, base: sb, ls: LS_SMALL, stroke: true });
-        if (sR) put([{ t: sR, f: "cera", px: smallPx * k, fill: WHITE }], tR, { right: mx + mw - 6, base: sb, ls: LS_SMALL, stroke: true });
-        put([{ t: MAIN, f: "druk", px, fill: acc }], tMain, { cx: CX, base: mb });
-        if (hand) {
-          const hp = script(hand, mw * 0.75, cap * 0.8);
-          put([{ t: hand, f: "script", px: hp, fill: alt(acc) }], Math.max(tMain + 0.25, tm(hand.split(" ")[0], 0.6)), { cx: CX, base: mb - cap * 0.05, ls: LS_SCRIPT });
-        }
-        break;
-      }
-      case "am_side": {
-        const lines = balance([...lw, ...REST.map((w) => w.toLowerCase())], 3);
-        const n = lines.length;
-        const capM100 = capOf("druk", 100), aM = M("druk", MAIN, 100).w / capM100;
-        const kk = n ? 1 + 1.27 * (n - 1) : 1;
-        const smallAsc100 = M("cera", "\u0410\u0430\u0431", 100).asc;
-        const aL = n ? Math.max(...lines.map((t) => (M("cera", t, 100).w + LS_SMALL * 100 * ([...t].length - 1)) / smallAsc100)) : 0;
-        const gap = n ? 24 : 0;
-        let C = (W_MAIN + 10 - gap) / (aM + aL / kk);
-        C = Math.min(C, CAP_MAX + 40);
-        const c = C / kk, total = C * aM + gap + c * aL;
-        const x0 = Math.max(70, CX - total / 2), mb = TOP + C;
-        tMain = tm(MAIN, 0.5);
-        lines.forEach((t, i) => {
-          const at = tm(t.split(" ")[0], 0.1 + 0.12 * i);
-          put([{ t, f: "cera", px: 100 * c / smallAsc100, fill: WHITE }], at, { x: x0 + C * aM + gap, base: TOP + c + i * 1.27 * c, ls: LS_SMALL, stroke: true });
-        });
-        put([{ t: MAIN, f: "druk", px: 100 * C / capM100, fill: acc }], tMain, { x: x0, base: mb });
-        break;
-      }
-      case "am_frame":
-      case "am_flash": {
-        const lead = leadLine(tm(lw[0], 0));
-        const tl = titleLines(CAP_MAX);
-        const capMax = tl.length > 1 ? 280 : CAP_MAX;
-        let y = lead ? lead.y + 26 : TOP;
-        tMain = tm(tw[0], inp.kind === "am_flash" ? 0.45 : 0.35);
-        tl.forEach((t) => {
-          const px = fitPx("druk", t, W_MAIN, capMax), cap = capOf("druk", px);
-          y += cap;
-          put([{ t, f: "druk", px, fill: inp.kind === "am_frame" ? WHITE : acc }], tMain, { cx: CX, base: y, fx: inp.kind === "am_frame" ? "frame" : void 0 });
-          y += 18;
-        });
-        if (inp.kind === "am_flash") {
-          flash = tMain;
-          zoom = 1.35;
-        }
-        if (inp.kind === "am_frame") edge = acc;
-        break;
-      }
-      case "am_fonts": {
-        const lead = leadLine(tm(lw[0], 0));
-        tMain = tm(MAIN, 0.4);
-        const vars = [
-          { t: MAIN, f: "druk", px: fitPx("druk", MAIN, W_MAIN, 300), fill: acc },
-          { t: MAIN, f: "sprite", px: fitPx("sprite", MAIN, 900, 300), fill: acc },
-          { t: MAIN.toLowerCase(), f: "script", px: script(MAIN.toLowerCase(), 680, 300), fill: acc }
-        ];
-        const caps = vars.map((r) => r.f === "script" ? M("script", r.t, r.px).asc : capOf(r.f, r.px));
-        const capMax = Math.max(...caps);
-        const mid = (lead ? lead.y + 30 : TOP) + capMax / 2;
-        let i = 0;
-        for (let t = tMain; t < e - 1e-3; t += AM_STEP, i++) {
-          const r = vars[i % 3];
-          put([r], t, { cx: CX, base: mid + caps[i % 3] / 2, until: Math.min(e, t + AM_STEP), ls: r.f === "script" ? LS_SCRIPT : 0 });
-        }
-        if (REST.length) small(REST.join(" ").toLowerCase(), Math.max(tMain + 0.3, tm(REST[0], 0.65)), { cx: CX, base: mid + capMax / 2 + 34 + SMALL_CAP, maxW: W_MAIN });
-        break;
-      }
-      case "am_neg": {
-        let y = TOP;
-        if (lw.length) {
-          const t = lw.join(" ").toUpperCase();
-          const px2 = fitPx("benzin", t, W_MAIN, 50);
-          const it = put([{ t, f: "benzin", px: px2, fill: WHITE }], tm(lw[0], 0), { cx: CX, base: TOP + capOf("benzin", px2), stroke: true });
-          y = it.y + 24;
-        }
-        const px = fitPx("druk", MAIN, W_MAIN, CAP_MAX), cap = capOf("druk", px), mw = M("druk", MAIN, px).w;
-        tMain = tm(MAIN, 0.4);
-        put([{ t: MAIN, f: "druk", px, fill: WHITE }], tMain, { cx: CX, base: y + cap, fx: "neg" });
-        if (REST.length) {
-          const h = REST.join(" ").toLowerCase();
-          const hp = script(h, mw * 0.55, cap * 0.55);
-          put([{ t: h, f: "script", px: hp, fill: acc }], Math.max(tMain + 0.3, tm(REST[0], 0.65)), { right: CX + mw / 2 - 20, base: y + cap + cap * 0.18, ls: LS_SCRIPT });
-        }
-        break;
-      }
-      case "am_tall": {
-        const t = tw.join(" "), SY = 1.7;
-        const px = fitPx("druk", t, W_MAIN, 470 / SY), cap = capOf("druk", px), mw = M("druk", t, px).w;
-        const base = TOP + cap * SY;
-        const tS = tm(lw[0], 0);
-        tMain = tm(tw[0], 0.3);
-        put([{ t, f: "druk", px, fill: acc }], tMain, { cx: CX, base, sy: SY });
-        if (lw.length) {
-          const h = lw.join(" ");
-          put(
-            [{ t: h, f: "script", px: script(h, Math.max(Math.min(mw, 640), mw * 0.92), cap * SY * 0.5), fill: alt(acc) }],
-            tS,
-            { cx: CX + 20, base: base - cap * SY * 0.35, ls: LS_SCRIPT }
-          );
-        }
-        break;
-      }
-      case "am_letter": {
-        const lead = leadLine(tm(lw[0], 0));
-        const lines = tw.length > 3 ? balance(tw, 3) : tw.slice();
-        let px = Math.min(...lines.map((t) => fitPx("druk", t, W_MAIN, CAP_MAX)));
-        let cap = capOf("druk", px);
-        const room = 640, need = lines.length * cap + (lines.length - 1) * 14;
-        if (need > room) {
-          px *= room / need;
-          cap = capOf("druk", px);
-        }
-        let y = lead ? lead.y + 26 : TOP;
-        const times = lines.map((t, i) => tm(t.split(" ")[0], 0.15 + 0.15 * i));
-        tMain = (_b = times[0]) != null ? _b : s;
-        const swap = Math.min(e - 0.35, Math.max(Math.max(...times, s) + 0.45, s + 0.6 * D));
-        lines.forEach((t, i) => {
-          var _a2;
-          y += cap;
-          put([{ t, f: "druk", px, fill: WHITE }], times[i], { cx: CX, base: y, until: swap });
-          const ch = [...t];
-          const ok = (c) => !!c && /[вмнсаолктиmnsaolkti]/.test(c.toLowerCase());
-          const want = i === 0 ? Math.min(1, ch.length - 1) : Math.floor(ch.length * 0.6);
-          const order = ch.map((_, k) => k).sort((a, b) => Math.abs(a - want) - Math.abs(b - want) || b - a);
-          const j = (_a2 = order.find((k) => ok(ch[k]))) != null ? _a2 : -1;
-          if (j < 0) {
-            put([{ t, f: "druk", px, fill: WHITE }], swap, { cx: CX, base: y });
-            y += 14;
-            return;
+    const smallAsc100 = M("cera", "\u0410\u0430\u0431", 100).asc;
+    const build = (col, sc) => {
+      var _a2, _b;
+      const items = [];
+      let tMain = s, flash, zoom;
+      const used = /* @__PURE__ */ new Set();
+      const last = Math.max(s, e - Math.max(0.8, 0.35 * D));
+      const find = (x, lo = -1e9, hi = 1e9) => spoken.findIndex((w, k) => !used.has(k) && norm(x).length > 0 && norm(w.w) === norm(x) && w.s >= lo && w.s < hi);
+      const tm = (word, frac) => {
+        if (word) {
+          const ws = word.split(" ").filter(Boolean);
+          const ci = Math.max(0, ws.findIndex((x) => !GLUE.has(norm(x)) && !/^[0-9]+$/.test(norm(x))));
+          const i = find(ws[ci]);
+          if (i >= 0) {
+            used.add(i);
+            let t0 = spoken[i].s;
+            for (let j = ci - 1; j >= 0; j--) {
+              const k = find(ws[j], t0 - 0.8, t0);
+              if (k < 0) break;
+              used.add(k);
+              t0 = spoken[k].s;
+            }
+            return Math.max(s, Math.min(t0, last));
           }
-          const letter = ch[j].toLowerCase();
-          const sp = 100 * cap / Math.max(1, M("script", letter, 100).asc);
-          const slot = M("druk", ch[j], px).adv * 1.15, over = M("script", letter, sp).adv - slot;
-          const runs = [];
-          if (j > 0) runs.push({ t: ch.slice(0, j).join(""), f: "druk", px, fill: WHITE });
-          runs.push({ t: letter, f: "script", px: sp, fill: acc, dx: j > 0 ? -over / 2 : 0 });
-          if (j < ch.length - 1) runs.push({ t: ch.slice(j + 1).join(""), f: "druk", px, fill: WHITE, dx: j > 0 ? -over / 2 : -over });
-          put(runs, swap, { cx: CX, base: y });
-          y += 14;
-        });
-        break;
-      }
-      case "am_melt": {
-        const t = tw.join(" ");
-        const px = fitPx("druk", t, W_MAIN, CAP_MAX), cap = capOf("druk", px), mw = M("druk", t, px).w;
-        const base = TOP + cap, top = base - cap;
-        tMain = Math.min(tm(tw[0], 0.1), s + 0.4 * D);
-        const it = put([{ t, f: "druk", px, fill: acc }], tMain, { cx: CX, base, fx: "melt" });
-        it.meltY0 = top + 0.35 * cap;
-        it.meltY1 = top + 0.95 * cap;
-        if (lw.length) {
-          const h = lw.join(" ");
-          put(
-            [{ t: h, f: "script", px: script(h, mw * 0.85, cap * 0.75), fill: alt(acc) }],
-            Math.max(tMain + 0.3, tm(lw[0], 0.5)),
-            { right: CX + mw / 2 - 30, base: base - 10, ls: LS_SCRIPT }
-          );
         }
-        break;
+        return Math.max(s, Math.min(s + frac * D, last));
+      };
+      const CX = (col.x0 + col.x1) / 2, CW = col.x1 - col.x0;
+      const WM = Math.min(W_MAIN, CW) * Math.min(1, sc / 0.9 > 1 ? 1 : sc / 0.9);
+      const CAPM = CAP_MAX * sc;
+      const SCAP = Math.max(50, SMALL_CAP * Math.min(1, sc + 0.15));
+      const smallPx = 100 * SCAP / Math.max(1, smallAsc100);
+      const put = (runs, at, o) => {
+        var _a3, _b2, _c, _d, _e;
+        const ls = (_a3 = o.ls) != null ? _a3 : 0;
+        let w = 0, l = 0, asc = 0, desc = 0;
+        runs.forEach((r, i) => {
+          var _a4;
+          const m = M(r.f, r.t, r.px);
+          const n = [...r.t].length - (i === runs.length - 1 ? 1 : 0);
+          const extra = ls * r.px * Math.max(0, n);
+          if (runs.length === 1) {
+            w = m.w + extra;
+            l = m.l;
+          } else {
+            w += m.adv + extra + ((_a4 = r.dx) != null ? _a4 : 0);
+            if (i === 0) l = m.l;
+          }
+          asc = Math.max(asc, m.asc);
+          desc = Math.max(desc, m.desc);
+        });
+        const left = o.cx !== void 0 ? o.cx - w / 2 : o.right !== void 0 ? o.right - w : (_b2 = o.x) != null ? _b2 : 0;
+        const sy = (_c = o.sy) != null ? _c : 1;
+        const role = (_d = o.role) != null ? _d : runs.some((r) => r.f === "druk" || r.f === "sprite") ? "big" : runs.some((r) => r.f === "script") ? "hand" : "small";
+        const it = {
+          at,
+          until: (_e = o.until) != null ? _e : e,
+          x: left + l,
+          y: o.base,
+          runs,
+          ls,
+          sy,
+          fx: o.fx,
+          top: o.base - asc * sy,
+          bot: o.base + desc,
+          left,
+          w,
+          role
+        };
+        items.push(it);
+        return it;
+      };
+      const small = (t, at, o) => {
+        var _a3;
+        let px = (_a3 = o.px) != null ? _a3 : smallPx;
+        const w = M("cera", t, px).w + LS_SMALL * px * ([...t].length - 1);
+        if (o.maxW && w > o.maxW) px = Math.max(100 * 50 / smallAsc100, px * o.maxW / w);
+        return put([{ t, f: "cera", px, fill: WHITE }], at, __spreadValues({ ls: LS_SMALL }, o));
+      };
+      const script = (t, W, capMax) => fitPx("script", t, W, capMax, "");
+      const leadOver = (top, stackW, ws = lw) => {
+        if (!ws.length) return;
+        const t = ws.join(" ");
+        let px, gap = 20;
+        if (stackW) {
+          const w100 = M("cera", t, 100).w + LS_SMALL * 100 * ([...t].length - 1);
+          px = Math.min(100 * stackW * 0.95 / w100, 100 * SCAP * 1.35 / smallAsc100);
+          px = Math.max(px, smallPx);
+          gap = 5;
+        }
+        small(t, tm(ws[0], 0), { cx: CX, base: top - gap, maxW: CW, px });
+      };
+      const stack = (lines, top, at, fill, fx, until) => {
+        let px = Math.min(...lines.map((t) => fitPx("druk", t, WM, lines.length > 1 ? CAPM * 0.8 : CAPM)));
+        const cap = capOf("druk", px);
+        let y = top;
+        const its = lines.map((t, i) => {
+          y += cap;
+          const it = put([{ t, f: "druk", px, fill }], at[i], { cx: CX, base: y, fx, until });
+          y -= cap * 0.1;
+          return it;
+        });
+        return { its, px, cap, bot: its.length ? its[its.length - 1].y : top, w: Math.max(...lines.map((t) => M("druk", t, px).w)) };
+      };
+      switch (kind) {
+        case "am_two": {
+          const L = trim([...lw, ...BEFORE], 2, "end");
+          let hand = AFTER.join(" ");
+          if (!hand && L.length >= 3) hand = L.pop();
+          const nL = Math.ceil(L.length / 2);
+          const sL = L.slice(0, nL).join(" "), sR = L.slice(nL).join(" ");
+          const px = fitPx("druk", MAIN, WM, CAPM), cap = capOf("druk", px), mw = M("druk", MAIN, px).w, mx = CX - mw / 2;
+          const sb = SCAP, mb = sb + 20 + cap;
+          const tL = tm(L[0], 0), tR = Math.max(tL, tm(L[nL], 0.15));
+          tMain = Math.max(tR, tm(MAIN, 0.35));
+          const wL = sL ? M("cera", sL, smallPx).w : 0, wR = sR ? M("cera", sR, smallPx).w : 0;
+          const k = wL + wR > mw - 60 ? Math.max(50 / SCAP, (mw - 60) / (wL + wR)) : 1;
+          if (sL) put([{ t: sL, f: "cera", px: smallPx * k, fill: WHITE }], tL, { x: mx + 6, base: sb, ls: LS_SMALL });
+          if (sR) put([{ t: sR, f: "cera", px: smallPx * k, fill: WHITE }], tR, { right: mx + mw - 6, base: sb, ls: LS_SMALL });
+          put([{ t: MAIN, f: "druk", px, fill: acc }], tMain, { cx: CX, base: mb });
+          if (hand) {
+            const hf = noScript(hand) ? "cera" : "script";
+            const hp = hf === "script" ? script(hand, mw * 0.75, cap * 0.8) : fitPx("cera", hand, mw * 0.6, cap * 0.45);
+            put([{ t: hand, f: hf, px: hp, fill: alt(acc) }], Math.max(tMain + 0.25, tm(hand, 0.6)), { cx: CX, base: mb - cap * 0.05, ls: LS_SCRIPT });
+          }
+          break;
+        }
+        case "am_side": {
+          const PRE = /* @__PURE__ */ new Set(["\u0432", "\u0432\u043E", "\u043D\u0430", "\u0441", "\u0441\u043E", "\u043A", "\u043A\u043E", "\u043F\u043E", "\u0434\u043E", "\u0437\u0430", "\u0438\u0437", "\u043E\u0442", "\u043E", "\u043E\u0431", "\u0443", "\u0431\u0435\u0437", "\u0434\u043B\u044F", "\u043F\u0440\u043E", "\u043F\u043E\u0434", "\u043D\u0430\u0434", "\u043F\u0440\u0438", "\u0447\u0435\u0440\u0435\u0437"]);
+          const variant = (i) => {
+            const ws = tw[i].split(" ");
+            let k = 0;
+            while (k < ws.length - 1 && PRE.has(norm(ws[k]))) k++;
+            const pre = ws.slice(0, k).join(" ").toLowerCase(), main = ws.slice(k).join(" ");
+            const head = [...lw, ...tw.slice(0, i).map((w) => w.toLowerCase())];
+            if (pre) {
+              if (head.length) head[head.length - 1] += " " + pre;
+              else head.push(pre);
+            }
+            const ls = trim([...head, ...tw.slice(i + 1).map((w) => w.toLowerCase())], 3, "end");
+            const aM2 = M("druk", main, 100).w / capOf("druk", 100);
+            const aL2 = ls.length ? Math.max(...ls.map((t) => (M("cera", t, 100).w + LS_SMALL * 100 * ([...t].length - 1)) / smallAsc100)) : 0;
+            return { main, ls, C: 1 / (aM2 + 0.24 * aL2) };
+          };
+          const vs = tw.map((_, i) => variant(i));
+          const V = inp.hw === "first" || inp.hw === "last" || !vs.length ? (_a2 = vs[mi]) != null ? _a2 : { main: MAIN, ls: [], C: 1 } : vs.reduce((a, b) => b.C > a.C ? b : a);
+          const lines = V.ls, SIDE = V.main;
+          const n = lines.length, GAP = 4, KL = 0.24;
+          const capM100 = capOf("druk", 100), aM = M("druk", SIDE, 100).w / capM100;
+          const aL = n ? Math.max(...lines.map((t) => (M("cera", t, 100).w + LS_SMALL * 100 * ([...t].length - 1)) / smallAsc100)) : 0;
+          const RW = col.x1 >= SAFE_R ? 40 : 0;
+          let C = (CW + RW - (n ? GAP : 0)) / (aM + KL * aL);
+          C = Math.min(C, (CAP_MAX + 60) * sc);
+          const c = KL * C, total = C * aM + (n ? GAP + c * aL : 0);
+          const x0 = Math.max(col.x0, CX + RW / 2 - total / 2), mb = C;
+          tMain = tm(SIDE, 0.5);
+          const step = n > 1 ? (C - c) / (n - 1) : 0;
+          lines.forEach((t, i) => {
+            const at = tm(t, 0.1 + 0.12 * i);
+            put([{ t, f: "cera", px: 100 * c / smallAsc100, fill: WHITE }], at, { x: x0 + C * aM + GAP, base: c + i * step, ls: LS_SMALL });
+          });
+          put([{ t: SIDE, f: "druk", px: 100 * C / capM100, fill: acc }], tMain, { x: x0, base: mb });
+          break;
+        }
+        case "am_frame":
+        case "am_flash": {
+          const one = tw.length < 2 || capOf("druk", fitPx("druk", tw.join(" "), WM, CAPM)) >= 170;
+          const lines = one ? [tw.join(" ")] : balance(tw, 2);
+          const tt = tm(lines[0], kind === "am_flash" ? 0.45 : 0.35);
+          tMain = tt;
+          const times = lines.map((l, i) => i === 0 ? tt : Math.max(tt + 0.2, tm(l, 0.45 + 0.15 * i)));
+          const leadH = lw.length ? SCAP + (lines.length > 1 ? 8 : 20) : 0;
+          const st = stack(lines, leadH, times, kind === "am_frame" ? WHITE : acc, kind === "am_frame" ? "frame" : void 0);
+          leadOver(leadH, lines.length > 1 ? st.w : void 0);
+          if (kind === "am_flash") {
+            flash = tMain;
+            zoom = 1.35;
+          }
+          break;
+        }
+        case "am_fonts": {
+          tMain = tm(MAIN, 0.4);
+          const vars = [
+            { t: MAIN, f: "druk", px: fitPx("druk", MAIN, WM, 300 * sc), fill: acc },
+            { t: MAIN, f: "sprite", px: fitPx("sprite", MAIN, WM * 0.97, 300 * sc), fill: acc },
+            noScript(MAIN) ? { t: MAIN, f: "benzin", px: fitPx("benzin", MAIN, WM * 0.9, 260 * sc), fill: acc } : { t: MAIN.toLowerCase(), f: "script", px: script(MAIN.toLowerCase(), WM * 0.73, 300 * sc), fill: acc }
+          ];
+          const caps = vars.map((r) => r.f === "script" ? M("script", r.t, r.px).asc : capOf(r.f, r.px));
+          const capMax = Math.max(...caps);
+          const LW = [...lw, ...BEFORE];
+          const top = LW.length ? SCAP + 20 : 0, mid = top + capMax / 2;
+          leadOver(top, void 0, LW);
+          let i = 0;
+          for (let t = tMain; t < e - 1e-3; t += AM_STEP, i++) {
+            const r = vars[i % 3];
+            put([r], t, { cx: CX, base: mid + caps[i % 3] / 2, until: Math.min(e, t + AM_STEP), ls: r.f === "script" ? LS_SCRIPT : 0, role: "swap" });
+          }
+          if (AFTER.length) small(AFTER.join(" "), Math.max(tMain + 0.3, tm(AFTER[0], 0.65)), { cx: CX, base: mid + capMax / 2 + 3 + SCAP, maxW: CW });
+          break;
+        }
+        case "am_neg": {
+          let y = 0;
+          const LW = [...lw, ...BEFORE];
+          if (LW.length) {
+            const t = LW.join(" ").toUpperCase();
+            const px2 = fitPx("benzin", t, WM, 50 * Math.max(1, SCAP / SMALL_CAP));
+            const it = put([{ t, f: "benzin", px: px2, fill: WHITE }], tm(LW[0], 0), { cx: CX, base: capOf("benzin", px2) });
+            y = it.y + 20;
+          }
+          const px = fitPx("druk", MAIN, WM, CAPM), cap = capOf("druk", px), mw = M("druk", MAIN, px).w;
+          tMain = tm(MAIN, 0.4);
+          put([{ t: MAIN, f: "druk", px, fill: WHITE }], tMain, { cx: CX, base: y + cap, fx: "neg" });
+          if (AFTER.length) {
+            const h = AFTER.join(" "), hf = noScript(h) ? "cera" : "script";
+            const hp = hf === "script" ? script(h, mw * 0.55, cap * 0.55) : fitPx("cera", h, mw * 0.45, cap * 0.3);
+            put([{ t: h, f: hf, px: hp, fill: acc }], Math.max(tMain + 0.3, tm(AFTER[0], 0.65)), { right: CX + mw / 2 - 20, base: y + cap + cap * 0.18, ls: LS_SCRIPT });
+          }
+          break;
+        }
+        case "am_tall": {
+          const t = tw.join(" "), SY = 1.7;
+          const px = fitPx("druk", t, WM, 470 * sc / SY), cap = capOf("druk", px), mw = M("druk", t, px).w;
+          const base = cap * SY;
+          const tS = tm(lw[0], 0);
+          tMain = tm(tw[0], 0.3);
+          put([{ t, f: "druk", px, fill: acc }], tMain, { cx: CX, base, sy: SY });
+          if (lw.length) {
+            const h = lw.join(" ");
+            const hf = noScript(h) ? "cera" : "script", hw = Math.max(Math.min(mw, 640), mw * 0.92);
+            put(
+              [{ t: h, f: hf, px: hf === "script" ? script(h, hw, cap * SY * 0.5) : fitPx("cera", h, hw * 0.8, cap * SY * 0.22), fill: alt(acc) }],
+              tS,
+              { cx: CX + 20, base: base - cap * SY * 0.35, ls: LS_SCRIPT }
+            );
+          }
+          break;
+        }
+        case "am_letter": {
+          const lines = tw.length >= 2 ? tw.slice() : balance(tw.join(" ").split(" ").filter(Boolean), 2);
+          const times = lines.map((t, i) => tm(t, 0.15 + 0.15 * i));
+          tMain = (_b = times[0]) != null ? _b : s;
+          const swap = Math.min(e - 0.35, Math.max(Math.max(...times, s) + 0.45, s + 0.6 * D));
+          const leadH = lw.length ? SCAP * 1.35 + 8 : 0;
+          const st = stack(lines, leadH, times, WHITE, void 0, swap);
+          leadOver(leadH, st.w);
+          st.its.forEach((it, i) => {
+            var _a3;
+            const t = lines[i], ch = [...t], y = it.y, px = st.px, cap = st.cap;
+            const ok = (c) => !!c && /[саоеsaoe]/.test(c.toLowerCase());
+            const want = i === 0 ? Math.min(1, ch.length - 1) : Math.floor(ch.length * 0.6);
+            const order2 = ch.map((_, k) => k).sort((a, b) => Math.abs(a - want) - Math.abs(b - want) || b - a);
+            const j = (_a3 = order2.find((k) => ok(ch[k]))) != null ? _a3 : -1;
+            if (j < 0) {
+              put([{ t, f: "druk", px, fill: WHITE }], swap, { cx: CX, base: y, role: "still" });
+              return;
+            }
+            const letter = ch[j].toLowerCase();
+            const sp = 100 * cap / Math.max(1, M("script", letter, 100).asc);
+            const slot = M("druk", ch[j], px).adv * 1.15, over = M("script", letter, sp).adv - slot;
+            const runs = [];
+            if (j > 0) runs.push({ t: ch.slice(0, j).join(""), f: "druk", px, fill: WHITE });
+            runs.push({ t: letter, f: "script", px: sp, fill: acc, dx: j > 0 ? -over / 2 : 0 });
+            if (j < ch.length - 1) runs.push({ t: ch.slice(j + 1).join(""), f: "druk", px, fill: WHITE, dx: j > 0 ? -over / 2 : -over });
+            const li = put(runs, swap, { cx: CX, base: y, role: "letter" });
+            li.lx0 = li.left + (j > 0 ? M("druk", ch.slice(0, j).join(""), px).adv : 0) + (j > 0 ? -over / 2 : 0);
+            li.lx1 = li.lx0 + M("script", letter, sp).adv;
+          });
+          break;
+        }
+        case "am_melt": {
+          const t = tw.join(" ");
+          const px = fitPx("druk", t, WM, CAPM), cap = capOf("druk", px), mw = M("druk", t, px).w;
+          const base = cap;
+          tMain = Math.min(tm(tw[0], 0.1), s + 0.4 * D);
+          const it = put([{ t, f: "druk", px, fill: acc }], tMain, { cx: CX, base, fx: "melt" });
+          it.meltY0 = 0.35 * cap;
+          it.meltY1 = 0.95 * cap;
+          if (lw.length) {
+            const h = lw.join(" ");
+            const hf = noScript(h) ? "cera" : "script";
+            put(
+              [{ t: h, f: hf, px: hf === "script" ? script(h, mw * 0.85, cap * 0.75) : fitPx("cera", h, mw * 0.7, cap * 0.35), fill: alt(acc) }],
+              Math.max(tMain + 0.3, tm(lw[0], 0.5)),
+              { right: CX + mw / 2 - 30, base: base - 10, ls: LS_SCRIPT }
+            );
+          }
+          break;
+        }
       }
-    }
-    if (inp.pos === "low" && items.length) {
-      const top = Math.min(...items.map((i) => i.top)), bot = Math.max(...items.map((i) => i.bot));
-      const dy = Math.max(SAFE_TOP - top, LOW_BOT - bot);
-      items.forEach((i) => {
+      const when = (u, lo) => {
+        const ws = u.split(" ").filter(Boolean);
+        const ci = Math.max(0, ws.findIndex((x) => !GLUE.has(norm(x)) && !/^[0-9]+$/.test(norm(x))));
+        const w = spoken.find((x) => norm(x.w) === norm(ws[ci]) && x.s >= lo - 0.05);
+        return w ? Math.max(s, Math.min(w.s, last)) : void 0;
+      };
+      for (const it of [...items]) {
+        if (it.role !== "small" && it.role !== "big" || it.runs.length !== 1) continue;
+        const r = it.runs[0], us = units(r.t.split(" ").filter(Boolean));
+        if (us.length < 2) continue;
+        const lsPx = it.ls * r.px;
+        let at = it.at;
+        const parts = us.map((u, i) => {
+          var _a3;
+          const pre = us.slice(0, i).join(" ") + (i ? " " : "");
+          const pen = it.x + (i ? M(r.f, pre, r.px).adv + lsPx * [...pre].length : 0);
+          const m = M(r.f, u, r.px);
+          if (i) at = Math.max(at, (_a3 = when(u, at)) != null ? _a3 : at + 0.15);
+          return __spreadProps(__spreadValues({}, it), { at: Math.min(at, Math.max(it.at, last)), x: pen, runs: [__spreadProps(__spreadValues({}, r), { t: u })], left: pen - m.l, w: m.w + lsPx * Math.max(0, [...u].length - 1) });
+        });
+        items.splice(items.indexOf(it), 1, ...parts);
+      }
+      const order = (x, y) => Math.abs(x.top - y.top) > 20 ? x.top - y.top : x.left - y.left;
+      if (items.length) {
+        const m = Math.min(...items.map((i) => i.at));
+        items.filter((i) => i.at === m).sort(order)[0].at = s;
+      }
+      const late = items.filter((i) => Math.abs(i.at - last) < 1e-3 && (i.role === "big" || i.role === "small" || i.role === "hand")).sort(order);
+      if (late.length > 1) late.forEach((i, k) => {
+        i.at = Math.max(s, last - 0.2 * (late.length - 1 - k));
+      });
+      if (late.length > 1 && kind !== "am_flash") tMain = Math.min(tMain, ...late.map((i) => i.at));
+      const bb = items.length ? {
+        x0: Math.min(...items.map((i) => i.left)),
+        x1: Math.max(...items.map((i) => i.left + i.w)),
+        y0: Math.min(...items.map((i) => i.top)),
+        y1: Math.max(...items.map((i) => i.bot))
+      } : { x0: CX, x1: CX, y0: 0, y1: 0 };
+      const big = Math.max(0, ...items.map((i) => i.y - i.top));
+      return { items, tMain, flash, zoom, bb, big };
+    };
+    const sounds = (b) => {
+      const r = [];
+      const add = (at, f2, dur) => {
+        if (r.some((x) => x.f === f2 && Math.abs(x.at - at) < 0.1)) return;
+        r.push(dur !== void 0 ? { at, f: f2, dur } : { at, f: f2 });
+      };
+      const sw = b.items.filter((i) => i.role === "swap");
+      if (sw.length) {
+        const a = Math.min(...sw.map((i) => i.at));
+        add(a, "burst", Math.max(...sw.map((i) => i.until)) - a);
+      }
+      let bigs = 0;
+      [...b.items].sort((x, y) => x.at - y.at).forEach((i) => {
+        if (i.role === "big") {
+          if (!r.some((x) => (x.f === "hit" || x.f === "whoosh") && Math.abs(x.at - i.at) < 0.1)) add(i.at, bigs++ ? "whoosh" : "hit");
+        } else if (i.role === "hand" || i.role === "letter") add(i.at, "chalk");
+      });
+      if (b.flash !== void 0) add(b.flash, "rise");
+      return r.sort((x, y) => x.at - y.at);
+    };
+    const shift = (b, dy) => {
+      b.items.forEach((i) => {
         var _a2;
         i.y += dy;
         i.top += dy;
@@ -482,8 +687,57 @@ var AMLAY = (() => {
           i.meltY1 = ((_a2 = i.meltY1) != null ? _a2 : 0) + dy;
         }
       });
+      b.bb = __spreadProps(__spreadValues({}, b.bb), { y0: b.bb.y0 + dy, y1: b.bb.y1 + dy });
+      return b;
+    };
+    const out = (b, place, scale) => {
+      const f2 = inp.face;
+      let zo;
+      if (f2 && b.flash !== void 0) {
+        const cl = (v, a, z) => Math.max(a, Math.min(z, v));
+        zo = [cl((b.bb.x0 + b.bb.x1) / 2, f2.x0, f2.x1), cl((b.bb.y0 + b.bb.y1) / 2, f2.y0 - 0.35 * (f2.y1 - f2.y0), f2.y1)];
+      }
+      return { items: b.items, sfx: sounds(b), tMain: b.tMain, flash: b.flash, zoom: b.zoom, place, scale, zo };
+    };
+    const hit = (a, f2) => a.x0 < f2.x1 && a.x1 > f2.x0 && a.y0 < f2.y1 && a.y1 > f2.y0;
+    const full = { x0: SAFE_L, x1: SAFE_R };
+    const nat = build(full, 1);
+    shift(nat, inp.pos === "low" ? LOW_BOT - nat.bb.y1 : TOP - nat.bb.y0);
+    if (nat.bb.y0 < SAFE_TOP) shift(nat, SAFE_TOP - nat.bb.y0);
+    const f = inp.face;
+    if (!f) return out(nat, inp.pos === "low" ? "\u0441\u043D\u0438\u0437\u0443" : "\u0441\u0432\u0435\u0440\u0445\u0443", 1);
+    const fw = f.x1 - f.x0, fh = f.y1 - f.y0;
+    const heads = [
+      { x0: f.x0 - 0.08 * fw, x1: f.x1 + 0.08 * fw, y0: f.y0 - 0.35 * fh, y1: f.y1 + 0.06 * fh },
+      { x0: f.x0 - 0.03 * fw, x1: f.x1 + 0.03 * fw, y0: f.y0 - 0.08 * fh, y1: f.y1 + 0.03 * fh }
+    ];
+    if (!hit(nat.bb, heads[0])) return out(nat, inp.pos === "low" ? "\u0441\u043D\u0438\u0437\u0443" : "\u0441\u0432\u0435\u0440\u0445\u0443", 1);
+    const SCALES = [1, 0.92, 0.85, 0.78, 0.7, 0.62, 0.55, 0.5];
+    for (const [pass, hd] of heads.entries()) {
+      const regions = [
+        { name: "\u043D\u0430\u0434 \u0433\u043E\u043B\u043E\u0432\u043E\u0439", col: full, y0: SAFE_TOP, y1: hd.y0 - 12, pref: 1.08, v: "bottom" },
+        { name: "\u0441\u043B\u0435\u0432\u0430 \u043E\u0442 \u0433\u043E\u043B\u043E\u0432\u044B", col: { x0: SAFE_L, x1: hd.x0 - 14 }, y0: SAFE_TOP, y1: LOW_BOT, pref: 1, v: "top" },
+        { name: "\u0441\u043F\u0440\u0430\u0432\u0430 \u043E\u0442 \u0433\u043E\u043B\u043E\u0432\u044B", col: { x0: hd.x1 + 14, x1: SAFE_R }, y0: SAFE_TOP, y1: LOW_BOT, pref: 1, v: "top" },
+        { name: "\u043F\u043E\u0434 \u043F\u043E\u0434\u0431\u043E\u0440\u043E\u0434\u043A\u043E\u043C", col: full, y0: hd.y1 + 16, y1: LOW_BOT, pref: inp.pos === "low" ? 1.15 : 0.97, v: "top" },
+        // ниже 1330 — только левее колонки кнопок; субтитров в хуке нет, место свободно
+        { name: "\u043F\u043E\u0434 \u043F\u043E\u0434\u0431\u043E\u0440\u043E\u0434\u043A\u043E\u043C", col: { x0: SAFE_L, x1: BTN_X }, y0: hd.y1 + 16, y1: LOW_MAX, pref: inp.pos === "low" ? 1.1 : 0.93, v: "top" }
+      ].filter((r) => r.col.x1 - r.col.x0 >= 360 && r.y1 - r.y0 >= 140);
+      let best = null;
+      for (const r of regions) {
+        for (const sc of SCALES) {
+          const b = build(r.col, sc);
+          const h = b.bb.y1 - b.bb.y0;
+          if (h > r.y1 - r.y0 || b.bb.x1 - b.bb.x0 > r.col.x1 - r.col.x0 + 2) continue;
+          const top = r.name === "\u043F\u043E\u0434 \u043F\u043E\u0434\u0431\u043E\u0440\u043E\u0434\u043A\u043E\u043C" ? r.y0 : Math.max(r.y0, Math.min(TOP, r.y1 - h));
+          shift(b, top - b.bb.y0);
+          const score = b.big * r.pref;
+          if (!best || score > best.score) best = { b, name: r.name, sc, score };
+          break;
+        }
+      }
+      if (best) return out(best.b, best.name + (pass ? " (\u043D\u0430 \u0432\u043E\u043B\u043E\u0441\u0430\u0445)" : ""), best.sc);
     }
-    return { items, tMain, flash, zoom, edge };
+    return out(nat, "\u043D\u0435 \u043D\u0430\u0448\u043B\u043E\u0441\u044C \u043C\u0435\u0441\u0442\u0430 \u2014 \u043A\u0430\u043A \u043F\u043E \u043F\u0440\u0430\u0432\u0438\u043B\u0430\u043C", 1);
   }
   return __toCommonJS(amadeoLayout_exports);
 })();
@@ -663,6 +917,8 @@ const rnd = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return 
 const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 const TOP = 235, CPAD = 105, CAP = 1300;
 
+// лицо нарисованного человека в превью (как бокс детектора: от лба до подбородка) — хук обходит голову, как в ролике
+const AMFACE = { x0: 325, y0: 705, x1: 755, y1: 1255 };
 const PERSON = `<svg viewBox="0 0 1080 1920" width="1080" height="1920" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0">
 <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9b6a3"/><stop offset="1" stop-color="#8f7d6c"/></linearGradient>
 <radialGradient id="f" cx=".5" cy=".4" r=".6"><stop offset="0" stop-color="#e8c8ad"/><stop offset="1" stop-color="#c79c7c"/></radialGradient></defs>
@@ -719,11 +975,10 @@ function amMeas(f, text, px) {
   return { w: m.actualBoundingBoxLeft + m.actualBoundingBoxRight, l: m.actualBoundingBoxLeft, asc: m.actualBoundingBoxAscent, desc: m.actualBoundingBoxDescent, adv: m.width };
 }
 const AMPHOTO = `<div style="position:absolute;inset:0;background:linear-gradient(170deg,#ff9a3c,#ffd36e 35%,#4fa3d1 60%,#1d4f73)"></div>`;
-function amText(it, mask, outline) {
+function amText(it, mask) {   // обводки нет нигде (правило 19, Вадим 23.11)
   const tr = it.sy !== 1 ? ` transform="translate(0 ${it.y}) scale(1 ${it.sy}) translate(0 ${-it.y})"` : "";
-  const st = outline ? ` stroke="${outline}" stroke-width="3"` : it.stroke ? ` stroke="#000" stroke-width="2"` : "";
-  return `<text x="${it.x}" y="${it.y}"${tr}${st}${mask ? ` mask="${mask}"` : ""} stroke-linejoin="round" paint-order="stroke" style="white-space:pre">` +
-    it.runs.map((r) => `<tspan font-family="${AMF[r.f][0]}" font-weight="${AMF[r.f][1]}" font-size="${r.px}" fill="${outline ? "none" : r.fill}"${r.dx ? ` dx="${r.dx}"` : ""}${it.ls ? ` letter-spacing="${it.ls * r.px}"` : ""}>${esc(r.t)}</tspan>`).join("") + `</text>`;
+  return `<text x="${it.x}" y="${it.y}"${tr}${mask ? ` mask="${mask}"` : ""} style="white-space:pre">` +
+    it.runs.map((r) => `<tspan font-family="${AMF[r.f][0]}" font-weight="${AMF[r.f][1]}" font-size="${r.px}" fill="${r.fill}"${r.dx ? ` dx="${r.dx}"` : ""}${it.ls ? ` letter-spacing="${it.ls * r.px}"` : ""}>${esc(r.t)}</tspan>`).join("") + `</text>`;
 }
 function amHtml(out, t, id, under) {
   const vis = out.items.filter((i) => t >= i.at && t < i.until);
@@ -736,25 +991,43 @@ function amHtml(out, t, id, under) {
     ["frame", "neg"].map((fx) => `<clipPath id="${id}-${fx}" clipPathUnits="userSpaceOnUse">${clip(fx).map((i) => amText(i)).join("")}</clipPath>`).join("") +
     (melt ? `<linearGradient id="${id}-mg" gradientUnits="userSpaceOnUse" x1="0" y1="${melt.meltY0}" x2="0" y2="${melt.meltY1}"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>
       <mask id="${id}-m" maskUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920"><rect width="1080" height="1920" fill="url(#${id}-mg)"/></mask>` : "") + `</defs>` +
-    clip("frame").map((i) => amText(i, null, out.edge)).join("") +
     plain.map((i) => amText(i, i.fx === "melt" ? `url(#${id}-m)` : null)).join("") + `</svg>`;
   if (out.flash !== undefined && t >= out.flash && t < out.flash + .25) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${1 - (t - out.flash) / .25}"></div>`;
   return h;
 }
-// карточки фишек со значком: тот же хук на примере, верх кадра
+// карточки фишек: пример на ролике Вадима серии 1 из CapCut (зацикленное видео без звука, ex_<хук>.mp4 и постер ex_<хук>.jpg рядом со страницей, 24.11.2026);
+// карточки строятся один раз (иначе видео перезапускались бы на каждом выборе), дальше меняется только отметка
+// выбранной. Нажатие на видео — выбрать хук и показать пример крупно. Живое превью раскладки — в телефоне сверху
 function amChips() {
-  const el = $("hookam"); el.innerHTML = "";
-  AMHOOKS.forEach(([v, name, hint, ex]) => {
-    const b = document.createElement("button");
-    b.className = "chip card am" + (cfg.hook === v ? " on" : "");
-    const acc = cfg.acc || "#F2C21B";
-    const out = AMLAY.amLayout({ kind: v, lead: ex.lead, title: ex.title, s: 0, e: 3, words: [], acc, hw: "long", pos: "top" }, amMeas);
-    const k = 64 / 1080;
-    const pic = amHtml(out, 2.99, "th-" + v, (f) => f === "neg" ? `<div style="position:absolute;inset:0;background:linear-gradient(#90704f,#463b33 55%,#3a5b80)"></div>` : AMPHOTO);
-    b.innerHTML = `<div class="th"><div class="cv" style="transform:scale(${k}) translate(0,-230px)">${pic}</div></div><div>${name}<small>${hint}</small></div>`;
-    b.onclick = () => { cfg.hook = v; haptic(); render(); seek(0); };
-    el.appendChild(b);
-  });
+  const el = $("hookam");
+  if (!el.dataset.built) {
+    el.dataset.built = "1";
+    const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => {
+      const vd = e.target; if (e.isIntersecting) vd.play().catch(() => {}); else vd.pause();
+    }), { threshold: 0.1 }) : null;
+    AMHOOKS.forEach(([v, name, hint]) => {
+      const b = document.createElement("button");
+      b.className = "chip card am"; b.dataset.v = v;
+      b.innerHTML = `<div class="exv"><video src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline autoplay preload="metadata"></video></div>` +
+        `<div>${name}<small>${hint} · слов: ${AMLAY.amWords(v)}</small><small class="ex">▶ пример на ролике</small></div>`;
+      const vd = b.querySelector("video"); vd.muted = true;
+      if (io) io.observe(vd);
+      b.onclick = (e) => { cfg.hook = v; haptic(); render(); seek(0); if (e.target.closest(".exv, small.ex")) amBig(v); };
+      el.appendChild(b);
+    });
+  }
+  el.querySelectorAll(".am").forEach((b) => b.classList.toggle("on", cfg.hook === b.dataset.v));
+}
+function amBig(v) {
+  let o = $("exbig");
+  if (!o) {
+    o = document.createElement("div"); o.id = "exbig";
+    o.innerHTML = `<video muted loop playsinline autoplay></video><div>пример на ролике · нажми, чтобы закрыть</div>`;
+    o.onclick = () => { o.style.display = "none"; o.querySelector("video").pause(); };
+    document.body.appendChild(o);
+  }
+  const vd = o.querySelector("video"); vd.muted = true; vd.poster = `ex_${v}.jpg`; vd.src = `ex_${v}.mp4`;
+  o.style.display = "flex"; vd.play().catch(() => {});
 }
 
 function subs(t, ACC) {
@@ -802,7 +1075,7 @@ function insert(t) {
 
 function frame(t) {
   const BG = cfg.bg || "#F4EFE6", ACC = cfg.acc || "#E2C994", fx = cfg.fx || {};
-  const am = AMLAY.isAm(cfg.hook) && t < HOOK.end ? AMLAY.amLayout({ kind: cfg.hook, lead: HOOK.lead, title: HOOK.title, s: 0, e: HOOK.end, words: [], acc: ACC, hw: cfg.hw, pos: cfg.hpos }, amMeas) : null;
+  const am = AMLAY.isAm(cfg.hook) && t < HOOK.end ? AMLAY.amLayout({ kind: cfg.hook, lead: HOOK.lead, title: HOOK.title, s: 0, e: HOOK.end, words: [], acc: ACC, hw: cfg.hw, pos: cfg.hpos, face: AMFACE }, amMeas) : null;
   const segs = [{ s: 0, e: HOOK.end, kind: cfg.hook, lead: HOOK.lead, title: HOOK.title, shape: [190, 700, 700, 700, 350, 350, 0] }];
   if (cfg.topic !== "none") segs.push({ s: TOPIC.at, e: TOPIC.end, kind: cfg.topic, lead: TOPIC.lead, title: TOPIC.title, shape: [150, 640, 780, 1000, 56, 56, 0] });
   const seg = segs.find((g) => t >= g.s && t < g.e);
