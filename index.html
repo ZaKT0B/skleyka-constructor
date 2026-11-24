@@ -7,7 +7,7 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Manrope:wght@500;600;700;800&family=Montserrat:wght@800&family=Anton&family=Oswald:wght@500;600;700&family=Rubik+Spray+Paint&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Manrope:wght@500;600;700;800&family=Montserrat:wght@800&family=Anton&family=Oswald:wght@500;600;700&family=Rubik+Spray+Paint&family=Marck+Script&family=Playfair+Display:ital,wght@1,500&family=Unbounded:wght@800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: var(--tg-theme-bg-color, #111214);
@@ -36,6 +36,9 @@
   .chip { border: 1.5px solid var(--line); background: transparent; color: var(--text); border-radius: 999px; padding: 8px 12px; font: inherit; font-size: 13.5px; cursor: pointer; }
   .chip.on { border-color: var(--btn); background: color-mix(in srgb, var(--btn) 18%, transparent); font-weight: 600; }
   .chip small { display: block; font-size: 11px; color: var(--hint); font-weight: 400; }
+  .chip.fc { font-weight: inherit; padding: 9px 14px; }
+  .chip.fc span { white-space: nowrap; }
+  .chip.fc .pl { opacity: .45; margin: 0 .3em; font-size: 15px; }
   .card { text-align: left; border-radius: 14px; padding: 9px 11px; min-width: calc(50% - 4px); flex: 1 1 calc(50% - 4px); }
   .sw { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 4px; align-items: center; }
   .dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; position: relative; }
@@ -58,6 +61,11 @@
   .am .th { flex: none; width: 64px; height: 68px; border-radius: 8px; overflow: hidden; position: relative; background: linear-gradient(#6f8fb0, #b9c4cc 55%, #c9a77c 75%, #5c6b4f); }
   .am .th .cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0; }
   #amopts { display: none; }
+  /* субтитры из разбора (24.11): пока выбран такой стиль, обычные настройки субтитров приглушены */
+  .refnote { display: none; color: var(--btn); }
+  #subref .am > div:last-child { min-width: 0; overflow-wrap: anywhere; hyphens: auto; font-size: 14px; }
+  body.ref #refnote { display: block; }
+  body.ref #s-sub > :not(h2):not(#refnote), body.ref #s-subanim > :not(h2) { opacity: .45; }
   /* авторский хук: на главном экране сверху крутится его пример (24.11, просьба Вадима) */
   #pvex { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; background: #000; }
   /* пример хука на настоящем ролике (24.11): зацикленное видео без звука вместо значка, по нажатию — крупно */
@@ -89,17 +97,22 @@
       <div class="lbl">Где текст</div><div class="chips" id="hpos"></div></div>
   </div>
 
-  <div class="sec" id="s-color"><h2>🎨 Цвет</h2>
-    <div class="lbl">Основной: фон, плашка</div><div class="sw" id="bg"></div>
-    <div class="lbl">Акцент: главные слова, вторая строка</div><div class="sw" id="acc"></div>
-  </div>
+  <div class="sec" id="s-ref"><h2>💬 Субтитры из разбора</h2><p class="h">13 стилей из роликов-референсов, все одобрены. Нажми — пример крутится сверху на видео. Шрифт, место и появление у каждого свои.</p>
+    <div class="chips" id="subref"></div></div>
 
-  <div class="sec" id="s-sub"><h2>💬 Субтитры</h2>
-    <div class="lbl">Как появляются</div><div class="chips" id="subanim"></div>
-    <div class="lbl">Шрифт</div><div class="chips" id="font"></div>
+  <div class="sec" id="s-sub"><h2>💬 Субтитры</h2><p class="h refnote" id="refnote">Сейчас выбран стиль из разбора — настройки ниже не действуют. Выбери любой шрифт или появление, чтобы вернуться к своим.</p><p class="h">Обычные пишутся одним шрифтом. В паре главные слова набраны вторым шрифтом.</p>
+    <div class="lbl">Обычные</div><div class="chips" id="font"></div>
+    <div class="lbl">Пары шрифтов</div><div class="chips" id="fontpair"></div>
     <div class="lbl">Регистр</div><div class="chips" id="case"></div>
     <div class="lbl">Цвет текста</div><div class="sw" id="subcolor"></div>
     <div class="lbl">Размер: <span id="sizev"></span></div><input type="range" id="size" min="0.8" max="1.4" step="0.05">
+  </div>
+
+  <div class="sec" id="s-subanim"><h2>▶️ Появление субтитров</h2><p class="h">Как слова встают на экран.</p><div class="chips" id="subanim"></div></div>
+
+  <div class="sec" id="s-color"><h2>🎨 Цвет</h2>
+    <div class="lbl">Основной: фон, плашка</div><div class="sw" id="bg"></div>
+    <div class="lbl">Акцент: главные слова, вторая строка</div><div class="sw" id="acc"></div>
   </div>
 
   <div class="sec" id="s-ins"><h2>🖼 Вставки</h2><p class="h">Фото, видео и 3D-иконки у лица. Иконки всегда вырезаны без рамки.</p>
@@ -758,6 +771,23 @@ const HOOKS = [
   ["white", "Белый лист", "ты в арке, как в Белой карточке"],
   ["type", "Печатная машинка", "буквы по одной на маркере"],
 ];
+// субтитры из разбора 14 роликов (24.11.2026): имена = cs.sub.ref в StyleConstructor.tsx (RefSubs.tsx);
+// пример — кусок ролика 1 Вадима с этим стилем (ex_<стиль>.mp4 и постер ex_<стиль>.jpg рядом со страницей, Remotion: refdemo.mjs)
+const REFSUBS = [
+  ["s23", "Жирный курсив по слову", "одно слово под лицом, «отскок», лёгкая тень"],
+  ["s30", "Полужирный по слову", "крупное слово под лицом, «отскок»"],
+  ["s24", "Широкий капс столбиком", "слова встают в пустом месте из размытия"],
+  ["s25", "Две строки из серого в белый", "мелко слева, сказанное слово белеет"],
+  ["s26", "Блок с каллиграфией", "главное слово капсом или каллиграфией"],
+  ["s27", "Плакат: узкий капс и курсив", "крупное главное слово, рядом курсив"],
+  ["s28", "Тетрадь", "две строки слева, слово загорается"],
+  ["s29", "Обложка: жёлтое слово", "крупное жёлтое, мелкие строки сверху и снизу"],
+  ["s31", "Строка проявляется", "слова проступают, пока звучат"],
+  ["s32", "Строка подсвечивается", "до трёх строк слева, звучащая — тёплым цветом"],
+  ["s33", "Слово за словом с тенью", "строка под лицом копится по слову"],
+  ["s34", "Строки растут слева", "слова проявляются, блок до трёх строк"],
+  ["s36", "Подъём из размытия", "строка над головой, слова всплывают"],
+];
 // фишки текста alex.amadeo (23.11.2026): имена = cs.hook в StyleConstructor.tsx; пример — подпись для значка
 const AMHOOKS = [
   ["am_two", "Два слова над главным", "мелкие над краями, рукописный акцент цветом", { lead: "два слова", title: "ГЛАВНОЕ АКЦЕНТ" }],
@@ -778,17 +808,44 @@ const TOPICS = [
   ["white", "Белая карточка", "белый лист, ты в арке, как в 8 стиле"],
   ["none", "Без переходов", "только субтитры и вставки"],
 ];
-const SUBANIM = [["one", "По одному слову"], ["pop", "Выпрыгивают"], ["blur", "Из размытия"], ["karaoke", "Караоке"], ["box", "Слово на маркере"], ["slide", "Строкой снизу"], ["type", "Печатаются"]];
+// появление субтитров (разбор 14 роликов 24.11.2026): слово за словом, проявление, построчно, волна — новые
+const SUBANIM = [["one", "По одному слову"], ["word", "Слово за словом"], ["fade", "Проявляются"], ["blur", "Из размытия"], ["karaoke", "Из серого в белый"],
+  ["lines", "Построчно"], ["wave", "Волна"], ["pop", "Выпрыгивают"], ["box", "Слово на маркере"], ["slide", "Строкой снизу"], ["type", "Печатаются"]];
 const FONTS = [
   ["sf", "SF Pro", "-apple-system, 'SF Pro Text', system-ui, sans-serif", 600, 1],
   ["sfblack", "SF Pro Black", "-apple-system, 'SF Pro Display', system-ui, sans-serif", 900, 0.95],
   ["bebas", "Bebas", "'Bebas Neue', sans-serif", 400, 1.35, true],
   ["manrope", "Manrope", "Manrope, sans-serif", 800, 1],
   ["cool", "Coolvetica", "Oswald, sans-serif", 500, 1.25],
-  ["druk", "Druk", "Anton, sans-serif", 400, 1.05, true],
+  ["druk", "Druk", "Oswald, sans-serif", 700, 1.15, true],   // превью: у Anton нет кириллицы (24.11.2026)
   ["mont", "Montserrat", "Montserrat, sans-serif", 800, 0.9],
   ["caveat", "Рукописный", "Caveat, cursive", 700, 1.3],
+  // 24.11.2026: шрифты для обычных и пар (7-е поле — курсив)
+  ["thin", "Тонкий", "-apple-system, 'SF Pro Text', system-ui, sans-serif", 300, 1],
+  ["sfreg", "Простой", "-apple-system, 'SF Pro Text', system-ui, sans-serif", 400, 1],
+  ["sfit", "Жирный курсив", "-apple-system, 'SF Pro Text', system-ui, sans-serif", 700, 1, false, true],
+  ["wide", "Широкий", "Unbounded, sans-serif", 800, 0.74, true],
+  ["condit", "Узкий курсив", "Oswald, sans-serif", 500, 1.1, false, true],
+  ["calli", "Каллиграфия", "'Marck Script', cursive", 400, 1.3],
+  ["serifit", "Курсив", "'Playfair Display', serif", 500, 1.05, false, true],
 ];
+// обычные субтитры: один шрифт; подпись — как выглядит, набрана этим шрифтом
+const SUBSINGLE = [["sf", "Обычный"], ["thin", "Тонкий"], ["sfblack", "Жирный"], ["sfit", "Жирный курсив"], ["druk", "Узкий капс"], ["wide", "Широкий"], ["caveat", "Рукописный"]];
+// пары: [id, основной, акцентный (главные слова), подпись основного, подпись акцентного, размер акцента, основной приглушён]
+const PAIRS = [
+  ["p_calli", "sfreg", "calli", "Простой", "каллиграфия", 1.2],
+  ["p_thinit", "thin", "serifit", "Тонкий", "курсив", 1.1],
+  ["p_cond", "condit", "druk", "Узкий курсив", "капс", 1.3],
+  ["p_lightbold", "thin", "sfblack", "Светлый", "жирный", 1.05, true],
+  ["p_wide", "sf", "wide", "Обычный", "широкий", 1],
+  ["p_hand", "sfblack", "caveat", "Жирный", "рукописный", 1.2],
+];
+const fontById = (k) => FONTS.find((x) => x[0] === k) || FONTS[0];
+function subFont(id) {
+  const P = PAIRS.find((p) => p[0] === id);
+  return P ? { A: fontById(P[1]), B: fontById(P[2]), kB: P[5], dimA: !!P[6] } : { A: fontById(id), B: fontById(id), kB: 1, dimA: false };
+}
+const fcss = (F, px) => `font-family:${F[2]};font-weight:${F[3]};font-size:${Math.round(px)}px;${F[6] ? "font-style:italic;" : ""}${F[5] ? "text-transform:uppercase;" : ""}`;
 const CASES = [["lower", "строчные"], ["upper", "КАПС"], ["asis", "Как сказано"]];
 const LOOKS = [["frame", "Белая рамка"], ["cut", "Без рамки"], ["round", "Скруглённые"], ["polaroid", "Полароид"], ["circle", "Круг"]];
 const INSANIM = [["pop", "Выпрыгивает"], ["slide", "Выезжает сбоку"], ["blur", "Из размытия"], ["drop", "Падает сверху"], ["flip", "Переворот"], ["swing", "Качается"]];
@@ -806,11 +863,11 @@ const SUBCOLORS = ["#F7F2E8", "#FFFFFF", "#F2C62A", "#151515"];
 const PRESETS = [
   ["Как Гибрид", "цветной фон, круг", { hook: "hybrid", topic: "hybrid", bg: "#F4EFE6", acc: "#E2C994", sub: { font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, ins: { look: "frame", anim: "pop" }, fx: { zoom: true, layer: true, emoji: true } }],
   ["Как Стандартный", "плашки, крупно", { hook: "plate", topic: "plate", bg: "#171717", acc: "#F2C62A", sub: { font: "sfblack", anim: "box", case: "upper", size: 1.05, color: "#FFFFFF" }, ins: { look: "frame", anim: "slide" }, fx: { zoom: true, punch: true } }],
-  ["Как Белая карточка", "белый лист, арка", { hook: "white", topic: "white", bg: "#F4EFE6", acc: "#E5322D", sub: { font: "manrope", anim: "blur", case: "lower", size: 1, color: "#FFFFFF" }, ins: { look: "round", anim: "pop" }, fx: { layer: true } }],
+  ["Как Белая карточка", "белый лист, арка", { hook: "white", topic: "white", bg: "#F4EFE6", acc: "#E5322D", sub: { font: "sfblack", anim: "blur", case: "lower", size: 1, color: "#FFFFFF" }, ins: { look: "round", anim: "pop" }, fx: { layer: true } }],
   ["Как Минимализм", "лесенка, тонко", { hook: "ladder", topic: "none", bg: "#171717", acc: "#E2C994", sub: { font: "sf", anim: "karaoke", case: "lower", size: 0.9, color: "#F7F2E8" }, ins: { look: "cut", anim: "blur" }, fx: { zoom: true } }],
   ["Как Чистый", "от руки, спокойно", { hook: "hand", topic: "none", bg: "#F4EFE6", acc: "#D6BF9C", sub: { font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, ins: { look: "cut", anim: "blur" }, fx: {} }],
-  ["Авторский", "крупное слово, рукописный акцент", { hook: "am_two", hw: "long", hpos: "top", topic: "none", bg: "#171717", acc: "#F2C21B", sub: { font: "mont", anim: "one", case: "lower", size: 1, color: "#FFFFFF" }, ins: { look: "cut", anim: "pop" }, fx: { zoom: true, punch: true } }],
-  ["Микс", "плашка + гибрид + белая", { hook: "plate", topic: "hybrid", bg: "#1F6FE0", acc: "#F2C62A", sub: { font: "bebas", anim: "pop", case: "upper", size: 1.1, color: "#FFFFFF" }, ins: { look: "polaroid", anim: "drop" }, fx: { zoom: true, punch: true, flash: true, layer: true, emoji: true } }],
+  ["Авторский", "крупное слово, рукописный акцент", { hook: "am_two", hw: "long", hpos: "top", topic: "none", bg: "#171717", acc: "#F2C21B", sub: { font: "p_hand", anim: "word", case: "lower", size: 1, color: "#FFFFFF" }, ins: { look: "cut", anim: "pop" }, fx: { zoom: true, punch: true } }],
+  ["Микс", "плашка + гибрид + белая", { hook: "plate", topic: "hybrid", bg: "#1F6FE0", acc: "#F2C62A", sub: { font: "druk", anim: "pop", case: "upper", size: 1.1, color: "#FFFFFF" }, ins: { look: "polaroid", anim: "drop" }, fx: { zoom: true, punch: true, flash: true, layer: true, emoji: true } }],
 ];
 
 // ---------- состояние ----------
@@ -821,7 +878,7 @@ try {   // настройки из бота (прошлый свой стиль)
   if (q) cfg = Object.assign(cfg, JSON.parse(decodeURIComponent(escape(atob(q.replace(/-/g, "+").replace(/_/g, "/"))))));
   else { const s = localStorage.getItem("skl_cs"); if (s) cfg = Object.assign(cfg, JSON.parse(s)); }
 } catch (e) {}
-cfg.sub = Object.assign({ font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, cfg.sub || {});
+cfg.sub = Object.assign({ ref: "", font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, cfg.sub || {});
 cfg.ins = Object.assign({ look: "frame", anim: "pop" }, cfg.ins || {});
 cfg.fx = cfg.fx || {};
 cfg.hw = cfg.hw || "long"; cfg.hpos = cfg.hpos || "top";
@@ -836,6 +893,18 @@ function chips(el, list, get, set, jump, cards) {
     b.className = "chip" + (cards ? " card" : "") + (get() === v ? " on" : "");
     b.innerHTML = name + (hint ? `<small>${hint}</small>` : "");
     b.onclick = () => { set(v); haptic(); render(); seek(jump); };
+    el.appendChild(b);
+  });
+}
+// шрифтовые кнопки: подпись набрана тем же шрифтом (пара — двумя)
+function fontChips(el, list, pair) {
+  el.innerHTML = "";
+  list.forEach((it) => {
+    const v = it[0], b = document.createElement("button");
+    b.className = "chip fc" + (cfg.sub.font === v ? " on" : "");
+    if (pair) b.innerHTML = `<span style="${fcss(fontById(it[1]), 15 * fontById(it[1])[4])}${it[6] ? "opacity:.7;" : ""}">${it[3]}</span><span class="pl">+</span><span style="${fcss(fontById(it[2]), 15 * fontById(it[2])[4] * it[5])}">${it[4]}</span>`;
+    else b.innerHTML = `<span style="${fcss(fontById(v), 15 * fontById(v)[4])}">${it[1]}</span>`;
+    b.onclick = () => { cfg.sub.font = v; cfg.sub.ref = ""; haptic(); render(); seek(2.2); };
     el.appendChild(b);
   });
 }
@@ -884,8 +953,11 @@ function render(full = true) {
   chips($("hw"), HWS, () => cfg.hw, (v) => (cfg.hw = v), 0);
   chips($("hpos"), HPOS, () => cfg.hpos, (v) => (cfg.hpos = v), 0);
   if (full) { swatches($("bg"), BGS, () => cfg.bg, (v) => (cfg.bg = v), 5.3); swatches($("acc"), ACCS, () => cfg.acc, (v) => (cfg.acc = v), 2.6); swatches($("subcolor"), SUBCOLORS, () => cfg.sub.color, (v) => (cfg.sub.color = v), 2.6); }
-  chips($("subanim"), SUBANIM, () => cfg.sub.anim, (v) => (cfg.sub.anim = v), 2.3);
-  chips($("font"), FONTS, () => cfg.sub.font, (v) => (cfg.sub.font = v), 2.6);
+  chips($("subanim"), SUBANIM, () => cfg.sub.anim, (v) => { cfg.sub.anim = v; cfg.sub.ref = ""; }, 2.2);
+  refChips();
+  document.body.classList.toggle("ref", !!cfg.sub.ref);
+  fontChips($("font"), SUBSINGLE, false);
+  fontChips($("fontpair"), PAIRS, true);
   chips($("case"), CASES, () => cfg.sub.case, (v) => (cfg.sub.case = v), 2.6);
   $("size").value = cfg.sub.size; $("sizev").textContent = Math.round(cfg.sub.size * 100) + " %";
   chips($("look"), LOOKS, () => cfg.ins.look, (v) => (cfg.ins.look = v), 3.4);
@@ -919,6 +991,15 @@ const light = (hex) => { const n = parseInt((hex || "#000").slice(1, 7), 16); re
 const rnd = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 const TOP = 235, CPAD = 105, CAP = 1300;
+// зона мелких субтитров (разметка Вадима 24.11.2026) — те же числа, что SUB в remotion-reels-test/src/safe.ts:
+// y 250…1110 — x 70…1025; y 1110…1500 — x 70…887 (справа кнопки); ниже 1500 мелкого текста нет
+const SUBZ = { top: 250, bottom: 1500, left: 70, right: 1025, stepY: 1110, stepX2: 887 };
+function subBox(y, h, w) {
+  const top = Math.min(Math.max(y, SUBZ.top), SUBZ.bottom - h);
+  if (top + h > SUBZ.stepY) { const width = Math.min(w, SUBZ.stepX2 - SUBZ.left); return { top, left: Math.round(Math.max(SUBZ.left, (SUBZ.left + SUBZ.stepX2) / 2 - width / 2)), width }; }
+  const width = Math.min(w, 2 * (540 - SUBZ.left)); return { top, left: Math.round(540 - width / 2), width };
+}
+const SUBZ_LINE = `<svg width="1080" height="1920" viewBox="0 0 1080 1920" style="position:absolute;left:0;top:0;pointer-events:none"><path d="M${SUBZ.left} ${SUBZ.top}H${SUBZ.right}V${SUBZ.stepY}H${SUBZ.stepX2}V${SUBZ.bottom}H${SUBZ.left}Z" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-dasharray="22 14"/></svg>`;
 
 // лицо нарисованного человека в превью (как бокс детектора: от лба до подбородка) — хук обходит голову, как в ролике
 const AMFACE = { x0: 325, y0: 705, x1: 755, y1: 1255 };
@@ -1015,11 +1096,32 @@ function amChips() {
         `<div>${name}</div>`;
       const vd = b.querySelector("video"); vd.muted = true;
       if (io) io.observe(vd);
-      b.onclick = () => { cfg.hook = v; exOff = false; haptic(); render(); seek(0); };
+      b.onclick = () => { cfg.hook = v; exOff = false; exKind = "hook"; haptic(); render(); seek(0); };
       el.appendChild(b);
     });
   }
   el.querySelectorAll(".am").forEach((b) => b.classList.toggle("on", cfg.hook === b.dataset.v));
+}
+// карточки стилей из разбора — как карточки хуков: зацикленный пример, строятся один раз; нажатие — выбрать и показать пример сверху
+function refChips() {
+  const el = $("subref");
+  if (!el.dataset.built) {
+    el.dataset.built = "1";
+    const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.forEach((e) => {
+      const vd = e.target; if (e.isIntersecting) vd.play().catch(() => {}); else vd.pause();
+    }), { threshold: 0.1 }) : null;
+    REFSUBS.forEach(([v, name, hint]) => {
+      const b = document.createElement("button");
+      b.className = "chip card am"; b.dataset.v = v;
+      b.innerHTML = `<div class="exv"><video src="ex_${v}.mp4" poster="ex_${v}.jpg" muted loop playsinline autoplay preload="metadata"></video></div>` +
+        `<div>${name}<small>${hint}</small></div>`;
+      const vd = b.querySelector("video"); vd.muted = true;
+      if (io) io.observe(vd);
+      b.onclick = () => { cfg.sub.ref = cfg.sub.ref === v ? "" : v; exOff = false; exKind = "ref"; haptic(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+      el.appendChild(b);
+    });
+  }
+  el.querySelectorAll(".am").forEach((b) => b.classList.toggle("on", cfg.sub.ref === b.dataset.v));
 }
 function amBig(v) {
   let o = $("exbig");
@@ -1035,25 +1137,44 @@ function amBig(v) {
 
 function subs(t, ACC) {
   const ph = PHRASES.find((p) => t >= p.s && t < p.e); if (!ph) return "";
-  const s = cfg.sub, F = FONTS.find((f) => f[0] === s.font) || FONTS[0];
-  const fam = F[2], wt = F[3], caps = F[5], sz = Math.round(64 * F[4] * (s.size || 1));
+  const s = cfg.sub, SF = subFont(s.font), k0 = s.size || 1;
+  const szA = 64 * SF.A[4] * k0, szB = 64 * SF.B[4] * k0 * SF.kB, sz = Math.max(szA, szB);
   const color = s.color || "#F7F2E8";
-  const kase = (w) => (caps || s.case === "upper" ? w.toUpperCase() : w);
+  const isKey = (w) => KEYS.has(w[0]);
+  // слово: главное — вторым шрифтом пары; капс — у капсовых шрифтов или по выбору «КАПС»
+  const F = (w) => (isKey(w) ? SF.B : SF.A);
+  const txt = (w) => esc(F(w)[5] || s.case === "upper" ? w[0].toUpperCase() : w[0]);
+  const dim = (w) => (!isKey(w) && SF.dimA ? .72 : 1);   // в паре «светлый + жирный» основные слова приглушены
+  const base = (w, mul = 1) => `display:inline-block;${fcss(F(w), (isKey(w) ? szB : szA) * mul)}opacity:${dim(w)};`;
   const ws = ph.w, cur = [...ws].reverse().find((w) => t >= w[1] - .02);
-  const base = `display:inline-block;font-family:${fam};font-weight:${wt};font-size:${sz}px;`;
   const gap = (k) => (k < ws.length - 1 ? "margin-right:.26em;" : "");
   const sh = "text-shadow:0 4px 16px rgba(0,0,0,.4),0 0 2px rgba(0,0,0,.45);";
-  const wrap = (h) => `<div style="position:absolute;left:70px;right:70px;top:${CAP}px;text-align:center;line-height:1.12;color:${color};${sh}">${h}</div>`;
+  // как в StyleConstructor.tsx: колонка 250…1500 (20 px запаса снизу на увеличение активного слова и плашку), распорка до нужного верха сжимается — фраза не уходит ниже 1500 и под кнопки
+  const cb = subBox(CAP, Math.round(sz * 2.6), 940);
+  const wrap = (h) => `<div style="position:absolute;left:${cb.left}px;width:${cb.width}px;top:${SUBZ.top}px;height:${SUBZ.bottom - SUBZ.top}px;padding-bottom:20px;box-sizing:border-box;display:flex;flex-direction:column"><div style="flex:0 1 ${cb.top - SUBZ.top}px;min-height:0"></div><div class="fa-cap" style="flex:none;text-align:center;line-height:1.12;color:${color};${sh}">${h}</div></div>`;
+  const col = (w) => (isKey(w) ? ACC : color);
   const a = s.anim;
-  if (a === "one") { if (!cur) return ""; const o = ease((t - cur[1]) / .12); return wrap(`<span style="${base}font-size:${sz * 1.2}px;color:${KEYS.has(cur[0]) ? ACC : color};opacity:${o};transform:scale(${.9 + .1 * o})">${esc(kase(cur[0]))}</span>`); }
-  if (a === "karaoke") return wrap(ws.map((w, k) => { const said = t >= w[1] - .02, now = cur === w; return `<span style="${base}${gap(k)}color:${now ? ACC : color};opacity:${said ? 1 : .5};transform:scale(${now ? 1.08 : 1})">${esc(kase(w[0]))}</span>`; }).join(""));
-  if (a === "box") { const ink = light(ACC) ? "#151515" : "#fff"; return wrap(ws.map((w, k) => { const now = cur === w; return `<span style="${base}${gap(k)}padding:0 .14em;border-radius:.18em;background:${now ? ACC : "transparent"};color:${now ? ink : color};${now ? "text-shadow:none;" : ""}transform:rotate(${now ? -2 : 0}deg) scale(${now ? 1.06 : 1})">${esc(kase(w[0]))}</span>`; }).join("")); }
-  if (a === "slide") { const k = ease((t - ph.s) / .28); return wrap(`<div style="overflow:hidden;padding-bottom:8px"><div style="transform:translateY(${(1 - k) * 110}%)">${ws.map((w, i) => `<span style="${base}${gap(i)}color:${KEYS.has(w[0]) ? ACC : color}">${esc(kase(w[0]))}</span>`).join("")}</div></div>`); }
-  if (a === "type") return wrap(ws.map((w, i) => { if (t < w[1] - .02) return ""; const nx = ws[i + 1] ? ws[i + 1][1] : ph.e; const txt = kase(w[0]); const n = Math.max(1, Math.ceil(clamp((t - w[1]) / Math.max(.08, (nx - w[1]) * .8)) * txt.length)); return `<span style="${base}${gap(i)}color:${KEYS.has(w[0]) ? ACC : color}">${esc(txt.slice(0, n))}</span>`; }).join(""));
+  if (a === "one") { if (!cur) return ""; const o = ease((t - cur[1]) / .12); return wrap(`<span style="${base(cur, 1.2)}color:${col(cur)};opacity:${o * dim(cur)};transform:scale(${.9 + .1 * o})">${txt(cur)}</span>`); }
+  if (a === "karaoke") return wrap(ws.map((w, k) => { const said = t >= w[1] - .02, now = cur === w; return `<span style="${base(w)}${gap(k)}color:${now ? ACC : color};opacity:${(said ? 1 : .45) * dim(w)};transform:scale(${now ? 1.08 : 1})">${txt(w)}</span>`; }).join(""));
+  if (a === "box") { const ink = light(ACC) ? "#151515" : "#fff"; return wrap(ws.map((w, k) => { const now = cur === w; return `<span style="${base(w)}${gap(k)}padding:0 .14em;border-radius:.18em;background:${now ? ACC : "transparent"};color:${now ? ink : color};${now ? "text-shadow:none;" : ""}transform:rotate(${now ? -2 : 0}deg) scale(${now ? 1.06 : 1})">${txt(w)}</span>`; }).join("")); }
+  if (a === "slide") { const k = ease((t - ph.s) / .28); return wrap(`<div style="overflow:hidden;padding-bottom:8px"><div style="transform:translateY(${(1 - k) * 110}%)">${ws.map((w, i) => `<span style="${base(w)}${gap(i)}color:${col(w)}">${txt(w)}</span>`).join("")}</div></div>`); }
+  if (a === "type") return wrap(ws.map((w, i) => { if (t < w[1] - .02) return ""; const nx = ws[i + 1] ? ws[i + 1][1] : ph.e; const tx = F(w)[5] || s.case === "upper" ? w[0].toUpperCase() : w[0]; const n = Math.max(1, Math.ceil(clamp((t - w[1]) / Math.max(.08, (nx - w[1]) * .8)) * tx.length)); return `<span style="${base(w)}${gap(i)}color:${col(w)}">${esc(tx.slice(0, n))}</span>`; }).join(""));
+  // построчно: фраза делится на две строки, каждая проявляется целиком на своём первом слове
+  if (a === "lines") {
+    const n1 = ws.length > 3 ? Math.ceil(ws.length / 2) : ws.length, rows = [ws.slice(0, n1), ws.slice(n1)].filter((r) => r.length);
+    return wrap(rows.map((r) => { const o = ease((t - r[0][1]) / .3); return `<div style="opacity:${t < r[0][1] - .02 ? 0 : o};transform:translateY(${(1 - o) * 14}px)">${r.map((w, i) => `<span style="${base(w)}${i < r.length - 1 ? "margin-right:.26em;" : ""}color:${col(w)}">${txt(w)}</span>`).join("")}</div>`; }).join(""));
+  }
+  // волна: фраза целиком, буквы качаются вверх-вниз по кругу
+  if (a === "wave") {
+    const o = ease((t - ph.s) / .2); let li = 0;
+    return wrap(`<span style="opacity:${o}">${ws.map((w, k) => `<span style="${base(w)}${gap(k)}color:${col(w)}">${[...(F(w)[5] || s.case === "upper" ? w[0].toUpperCase() : w[0])].map((ch) => { const y = Math.sin(t * 6 - (li++) * .55) * .07; return `<span style="display:inline-block;transform:translateY(${y.toFixed(3)}em)">${esc(ch)}</span>`; }).join("")}</span>`).join("")}</span>`);
+  }
   return wrap(ws.map((w, k) => {
-    if (t < w[1] - .02) return `<span style="${base}${gap(k)}opacity:0">${esc(kase(w[0]))}</span>`;
-    if (a === "pop") { const kk = backE((t - w[1]) / .25); return `<span style="${base}${gap(k)}color:${cur === w || KEYS.has(w[0]) ? ACC : color};transform:scale(${Math.max(0, kk)})">${esc(kase(w[0]))}</span>`; }
-    const o = ease((t - w[1]) / .22); return `<span style="${base}${gap(k)}color:${KEYS.has(w[0]) ? ACC : color};opacity:${o};filter:blur(${(1 - o) * 8}px);transform:translateY(${(1 - o) * 10}px)">${esc(kase(w[0]))}</span>`;
+    if (t < w[1] - .02) return `<span style="${base(w)}${gap(k)}opacity:0">${txt(w)}</span>`;
+    if (a === "word") return `<span style="${base(w)}${gap(k)}color:${col(w)}">${txt(w)}</span>`;   // слово за словом: встаёт сразу, без анимации
+    if (a === "pop") { const kk = backE((t - w[1]) / .25); return `<span style="${base(w)}${gap(k)}color:${cur === w || isKey(w) ? ACC : color};transform:scale(${Math.max(0, kk)})">${txt(w)}</span>`; }
+    if (a === "fade") { const o = ease((t - w[1]) / .3); return `<span style="${base(w)}${gap(k)}color:${col(w)};opacity:${o * dim(w)}">${txt(w)}</span>`; }
+    const o = ease((t - w[1]) / .22); return `<span style="${base(w)}${gap(k)}color:${col(w)};opacity:${o * dim(w)};filter:blur(${(1 - o) * 8}px);transform:translateY(${(1 - o) * 10}px)">${txt(w)}</span>`;
   }).join(""));
 }
 
@@ -1104,7 +1225,7 @@ function frame(t) {
   if (seg && !bgSeg && seg.kind !== "plate" && !AMLAY.isAm(seg.kind)) h += `<div style="position:absolute;left:0;right:0;top:0;height:900px;background:linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,0));opacity:${Math.min(ease((t - seg.s) / .3), ease((seg.e - t) / .3))}"></div>`;
   if (am) h += amHtml(am, t, "pv", (f) => f === "neg" ? `<div style="position:absolute;inset:0;filter:invert(1);transform:scale(${z});transform-origin:50% 48%">${PERSON}</div>` : AMPHOTO);
   else if (seg) h += segText(seg.kind, seg.lead, seg.title, t - seg.s, seg.e, BG, ACC, t);
-  if (!(seg && (["hybrid", "white", "ladder", "hand", "type"].includes(seg.kind) || AMLAY.isAm(seg.kind)))) h += subs(t, ACC);
+  if (!(seg && (["hybrid", "white", "ladder", "hand", "type"].includes(seg.kind) || AMLAY.isAm(seg.kind)))) { const sb = subs(t, ACC); if (sb) h += SUBZ_LINE + sb; }
   if (!bgSeg) h += insert(t);
   if (fx.emoji && t > .9 && t < HOOK.end) h += `<div style="position:absolute;left:470px;top:1330px;font-size:140px;transform:scale(${backE((t - .9) / .35)})">${HOOK.emoji}</div>`;
   if (fx.flash && cfg.topic !== "none" && Math.abs(t - TOPIC.at) < .22) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${.85 * (1 - Math.abs(t - TOPIC.at) / .22)}"></div>`;
@@ -1116,10 +1237,12 @@ let t0 = performance.now(), last = 0;
 const FREEZE = parseFloat(new URLSearchParams(location.search).get("t"));   // для проверки: ?t=5.6 — стоп-кадр
 function seek(sec) { if (typeof sec === "number") { t0 = performance.now() - sec * 1000; if (sec >= HOOK.end) { exOff = true; exSync(); } } }
 // авторский хук выбран — на главном экране его пример; любая другая настройка (субтитры, вставки…) возвращает живое превью
-let exOff = false;
+let exOff = false, exKind = "hook";   // какой пример крутить сверху: хук или субтитры из разбора (что нажали последним)
 function exSync() {
-  const vd = $("pvex"), on = AMLAY.isAm(cfg.hook) && !exOff;
-  if (on) { const src = `ex_${cfg.hook}.mp4`; if (!vd.src.endsWith(src)) { vd.poster = `ex_${cfg.hook}.jpg`; vd.src = src; } vd.style.display = "block"; vd.muted = true; vd.play().catch(() => {}); }
+  const vd = $("pvex");
+  const ex = exKind === "ref" && cfg.sub.ref ? cfg.sub.ref : AMLAY.isAm(cfg.hook) ? cfg.hook : cfg.sub.ref || null;
+  const on = !!ex && !exOff;
+  if (on) { const src = `ex_${ex}.mp4`; if (!vd.src.endsWith(src)) { vd.poster = `ex_${ex}.jpg`; vd.src = src; } vd.style.display = "block"; vd.muted = true; vd.play().catch(() => {}); }
   else if (vd.style.display !== "none") { vd.pause(); vd.style.display = "none"; }
 }
 function fit() { const ph = $("phone"); $("cv").style.transform = `scale(${ph.clientWidth / 1080})`; }
