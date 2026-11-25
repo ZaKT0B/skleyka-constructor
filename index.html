@@ -114,10 +114,6 @@
 
   <div class="sec later" id="s-subanim"><h2>▶️ Появление субтитров</h2><p class="h">Как слова встают на экран.</p><div class="chips" id="subanim"></div></div>
 
-  <div class="sec later" id="s-color"><h2>🎨 Цвет</h2>
-    <div class="lbl">Основной: фон, плашка</div><div class="sw" id="bg"></div>
-    <div class="lbl">Акцент: главные слова, вторая строка</div><div class="sw" id="acc"></div>
-  </div>
 
   <div class="sec" id="s-ins"><h2>🖼 Вставки</h2><p class="h">Твои фото и видео сбоку от лица. В примере стекло вместо фото. 3D-иконки всегда вырезаны, без рамки.</p>
     <div class="lbl">Как выглядит</div><div class="chips" id="look"></div>
@@ -126,6 +122,12 @@
 
 
   <div class="sec" id="s-topic"><h2>🔀 Переходы на темы</h2><p class="h">Что происходит, когда в речи начинается новая мысль. Вспышка и карточки из «Фишек» работают на этих переходах.</p><div class="chips" id="topic"></div></div>
+
+  <div class="sec" id="s-color"><h2>🎨 Цвет</h2><p class="h">Основной цвет — фон переходов и плашек. Акцент — главные слова в субтитрах. В примере переход «цветной фон».</p>
+    <div class="chips" id="palette"></div>
+    <div class="lbl">Или свои: основной</div><div class="sw" id="bg"></div>
+    <div class="lbl">Акцент</div><div class="sw" id="acc"></div>
+  </div>
 
   <div class="sec" id="s-fx"><h2>✨ Фишки</h2><p class="h">Можно включить несколько. Нажми — включить и посмотреть пример сверху, нажми ещё раз — выключить.</p><div class="chips" id="fx"></div></div>
 
@@ -869,6 +871,16 @@ const FX = [
   ["layer", "Карточки из-за кадра", "иконки выезжают на цветном фоне"],
   ["emoji", "Эмодзи в хуке", "если сценарист его поставил"],
 ];
+// цвет карточками (25.11.2026): готовые пары «основной + акцент», примеры ex_cl_* (tools_exfx.py PALETTES)
+const PALETTES = [
+  ["beige", "Беж и золото", "спокойно, как в Гибриде", "#F4EFE6", "#E2C994"],
+  ["black", "Чёрный и жёлтый", "контрастно, как в Стандартном", "#171717", "#F2C62A"],
+  ["blue", "Синий и жёлтый", "ярко", "#1F6FE0", "#F2C62A"],
+  ["wine", "Бордо и золото", "тепло, дорого", "#7A1F2B", "#E2C994"],
+  ["green", "Зелёный и мята", "свежо", "#2E5E4A", "#86EBD0"],
+  ["pink", "Розовый и жёлтый", "игриво", "#EB549B", "#F2C62A"],
+];
+const palOf = () => (PALETTES.find((x) => x[3].toUpperCase() === (cfg.bg || "").toUpperCase() && x[4].toUpperCase() === (cfg.acc || "").toUpperCase()) || [""])[0];
 const BGS = ["#F4EFE6", "#171717", "#E2C994", "#1F6FE0", "#7A1F2B", "#2E5E4A", "#EB549B", "#F2C62A"];
 const ACCS = ["#E2C994", "#F2C62A", "#E67F21", "#2195E6", "#D1261A", "#EB549B", "#5BB85A", "#86EBD0", "#C7A6FF", "#FFFFFF"];
 const SUBCOLORS = ["#F7F2E8", "#FFFFFF", "#F2C62A", "#151515"];
@@ -984,6 +996,7 @@ function render(full = true) {
   $("size").value = cfg.sub.size; $("sizev").textContent = Math.round(cfg.sub.size * 100) + " %";
   exCards($("look"), INSLOOK, () => cfg.ins.look, (v) => { cfg.ins.look = v; exKind = "il"; }, "il_");     // вставки — карточки с примером (24.11.2026)
   exCards($("insanim"), INSANIMC, () => cfg.ins.anim, (v) => { cfg.ins.anim = v; exKind = "ia"; }, "ia_");
+  exCards($("palette"), PALETTES, palOf, (v) => { const x = PALETTES.find((q) => q[0] === v); cfg.bg = x[3]; cfg.acc = x[4]; exKind = "cl"; }, "cl_");   // цвет — карточками (25.11.2026)
   exCards($("topic"), TOPICS, () => cfg.topic, (v) => { cfg.topic = v; exKind = "tp"; }, "tp_");   // переходы — карточками с примером (25.11.2026)
   toggles();
   chips($("music"), MUSIC, () => cfg.music, (v) => (cfg.music = v), undefined, true);
@@ -1294,7 +1307,7 @@ function seek(sec) { if (typeof sec === "number") { t0 = performance.now() - sec
 let exOff = false, exKind = "hook", exFx = "zoom";   // какой пример крутить сверху: хук или субтитры из разбора (что нажали последним)
 function exSync() {
   const vd = $("pvex");
-  const ex = exKind === "fx" ? "fx_" + exFx : exKind === "tp" ? "tp_" + (cfg.topic || "hybrid") : exKind === "il" ? "il_" + cfg.ins.look : exKind === "ia" ? "ia_" + cfg.ins.anim :
+  const ex = exKind === "fx" ? "fx_" + exFx : exKind === "tp" ? "tp_" + (cfg.topic || "hybrid") : exKind === "cl" ? (palOf() ? "cl_" + palOf() : null) : exKind === "il" ? "il_" + cfg.ins.look : exKind === "ia" ? "ia_" + cfg.ins.anim :
     exKind === "ref" && cfg.sub.ref ? cfg.sub.ref : isExHook(cfg.hook) ? cfg.hook : cfg.sub.ref || null;
   const on = !!ex && !exOff;
   if (on) { const src = `ex_${ex}.mp4`; if (!vd.src.endsWith(src)) { vd.poster = `ex_${ex}.jpg`; vd.src = src; } vd.style.display = "block"; vd.muted = true; vd.play().catch(() => {}); }
@@ -1306,7 +1319,7 @@ function loop(now) {
     last = now;
     const t = isNaN(FREEZE) ? ((now - t0) / 1000) % DUR : FREEZE;
     $("cv").innerHTML = frame(t);
-    $("moment").textContent = "▶ " + ($("pvex").style.display === "block" ? (exKind === "il" || exKind === "ia" ? "вставка" : exKind === "fx" ? "фишка" : exKind === "tp" ? "переход" : exKind === "ref" ? "субтитры" : "хук") : [...MOMENTS].reverse().find((m) => t >= m[0])[1]);
+    $("moment").textContent = "▶ " + ($("pvex").style.display === "block" ? (exKind === "il" || exKind === "ia" ? "вставка" : exKind === "fx" ? "фишка" : exKind === "tp" ? "переход" : exKind === "cl" ? "цвет" : exKind === "ref" ? "субтитры" : "хук") : [...MOMENTS].reverse().find((m) => t >= m[0])[1]);
   }
   requestAnimationFrame(loop);
 }
