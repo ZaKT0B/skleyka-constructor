@@ -129,6 +129,8 @@
 
   <div class="sec" id="s-fx"><h2>✨ Фишки</h2><p class="h">Можно включить несколько. Нажми — включить и посмотреть пример сверху, нажми ещё раз — выключить.</p><div class="chips" id="fx"></div></div>
 
+  <div class="sec" id="s-music"><h2>🎵 Музыка</h2><p class="h">Музыка всегда тише голоса.</p><div class="chips" id="music"></div></div>
+
   <pre class="out" id="out"></pre>
 </div>
 <button class="fallback" id="send">Готово</button>
@@ -854,6 +856,12 @@ const fcss = (F, px) => `font-family:${F[2]};font-weight:${F[3]};font-size:${Mat
 const CASES = [["lower", "строчные"], ["upper", "КАПС"], ["asis", "Как сказано"]];
 const LOOKS = [["frame", "Белая рамка"], ["cut", "Без рамки"], ["round", "Скруглённые"], ["polaroid", "Полароид"], ["circle", "Круг"]];
 const INSANIM = [["pop", "Выпрыгивает"], ["slide", "Выезжает сбоку"], ["blur", "Из размытия"], ["drop", "Падает сверху"], ["flip", "Переворот"], ["swing", "Качается"], ["rise", "Подъём и зум"], ["card", "Визитка"], ["shoulder", "Карточка за плечом"], ["float", "Плывёт с тенью"], ["bgswap", "Фон за тобой"], ["space", "Фотопространство"], ["warp", "Цифровое искажение"], ["ink", "Чернильный дым"], ["obj", "Объект над головой"], ["strip", "Лента карточек"], ["halo", "Нимб из фото"], ["arch", "Арка из фото"], ["burst", "Разлёт фото"], ["shape", "Ты в квадрате"], ["carousel", "Карусель"], ["tiles", "Кольцо плиток"], ["magic", "Магия карт"]];
+// музыка — как в опросе Склейки (25.11.2026, Вадим: «выбор из библиотеки, без музыки и отправлю свою»)
+const MUSIC = [
+  ["lib", "🎵 Из библиотеки", "подберу трек без слов"],
+  ["none", "🔇 Без музыки", "только голос"],
+  ["own", "📎 Отправлю свою", "после «Готово» пришлёшь файл или видео с музыкой"],
+];
 const FX = [
   ["zoom", "Медленные наезды", "кадр сам приближается и отдаляется"],
   ["punch", "Резкий наезд", "на главных словах"],
@@ -886,6 +894,7 @@ try {   // настройки из бота (прошлый свой стиль)
 cfg.sub = Object.assign({ ref: "", font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, cfg.sub || {});
 cfg.ins = Object.assign({ look: "frame", anim: "pop" }, cfg.ins || {});
 cfg.fx = cfg.fx || {};
+cfg.music = ["lib", "none", "own"].includes(cfg.music) ? cfg.music : "lib";
 cfg.hw = cfg.hw || "long"; cfg.hpos = cfg.hpos || "top";
 
 const $ = (id) => document.getElementById(id);
@@ -977,6 +986,7 @@ function render(full = true) {
   exCards($("insanim"), INSANIMC, () => cfg.ins.anim, (v) => { cfg.ins.anim = v; exKind = "ia"; }, "ia_");
   exCards($("topic"), TOPICS, () => cfg.topic, (v) => { cfg.topic = v; exKind = "tp"; }, "tp_");   // переходы — карточками с примером (25.11.2026)
   toggles();
+  chips($("music"), MUSIC, () => cfg.music, (v) => (cfg.music = v), undefined, true);
   exSync();
   try { localStorage.setItem("skl_cs", JSON.stringify(cfg)); } catch (e) {}
   $("out").textContent = JSON.stringify(cfg);
