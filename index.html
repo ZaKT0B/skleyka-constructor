@@ -64,9 +64,9 @@
   /* субтитры из разбора (24.11): пока выбран такой стиль, обычные настройки субтитров приглушены */
   .refnote { display: none; color: var(--btn); }
   /* 24.11: карточки субтитров по три в ряд — пример крупно сверху, короткое имя снизу (длинные имена ломались по слогам) */
-  #subref .card.am, #hook .card.am, #look .card.am, #insanim .card.am { flex-direction: column; align-items: stretch; text-align: center; gap: 6px; padding: 6px; min-width: calc(33.3% - 6px); flex: 0 1 calc(33.3% - 6px); }
-  #subref .am .exv, #hook .am .exv, #look .am .exv, #insanim .am .exv { width: 100%; height: auto; aspect-ratio: 9 / 16; }
-  #subref .am > div:last-child, #hook .am > div:last-child, #look .am > div:last-child, #insanim .am > div:last-child { font-size: 13px; line-height: 1.2; }
+  #subref .card.am, #hook .card.am, #look .card.am, #insanim .card.am, #fx .card.am { flex-direction: column; align-items: stretch; text-align: center; gap: 6px; padding: 6px; min-width: calc(33.3% - 6px); flex: 0 1 calc(33.3% - 6px); }
+  #subref .am .exv, #hook .am .exv, #look .am .exv, #insanim .am .exv, #fx .am .exv { width: 100%; height: auto; aspect-ratio: 9 / 16; }
+  #subref .am > div:last-child, #hook .am > div:last-child, #look .am > div:last-child, #insanim .am > div:last-child, #fx .am > div:last-child { font-size: 13px; line-height: 1.2; }
   body.ref #refnote { display: block; }
   body.ref #s-sub > :not(h2):not(#refnote), body.ref #s-subanim > :not(h2) { opacity: .45; }
   /* авторский хук: на главном экране сверху крутится его пример (24.11, просьба Вадима) */
@@ -126,7 +126,7 @@
 
   <div class="sec later" id="s-topic"><h2>🔀 Переходы на темы</h2><p class="h">Что происходит, когда в речи начинается новая мысль.</p><div class="chips" id="topic"></div></div>
 
-  <div class="sec later" id="s-fx"><h2>✨ Фишки</h2><div id="fx"></div></div>
+  <div class="sec" id="s-fx"><h2>✨ Фишки</h2><p class="h">Можно включить несколько. Нажми — включить и посмотреть пример сверху, нажми ещё раз — выключить.</p><div class="chips" id="fx"></div></div>
 
   <pre class="out" id="out"></pre>
 </div>
@@ -931,15 +931,23 @@ function swatches(el, list, get, set, jump) {
   inp.oninput = () => { set(inp.value.toUpperCase()); render(false); seek(jump); };
   own.appendChild(inp); el.appendChild(own);
 }
+// фишки — карточками с примером из ролика 1 (25.11.2026, tools_exfx.py): можно несколько, нажатие включает/выключает
 function toggles() {
-  const el = $("fx"); el.innerHTML = "";
-  FX.forEach(([k, name, hint]) => {
-    const r = document.createElement("div"); r.className = "row";
-    r.innerHTML = `<div><b>${name}</b><span>${hint}</span></div>`;
-    const t = document.createElement("div"); t.className = "tg" + (cfg.fx[k] ? " on" : "");
-    t.onclick = () => { cfg.fx[k] = !cfg.fx[k]; haptic(); render(); seek({ zoom: 7.5, punch: 3.0, flash: 5.4, layer: 5.6, emoji: 0.9 }[k]); };
-    r.appendChild(t); el.appendChild(r);
-  });
+  const el = $("fx");
+  if (!el.dataset.built) {
+    el.dataset.built = "1";
+    const io = exIO();
+    FX.forEach(([k, name, hint]) => {
+      const b = document.createElement("button");
+      b.className = "chip card am"; b.dataset.v = k;
+      b.innerHTML = `<div class="exv"><video data-src="ex_fx_${k}.mp4" poster="ex_fx_${k}.jpg" muted loop playsinline preload="none"></video></div><div>${name}<br><small style="opacity:.6">${hint}</small></div>`;
+      const vd = b.querySelector("video"); vd.muted = true;
+      if (io) io.observe(vd); else { vd.src = vd.dataset.src; vd.play().catch(() => {}); }
+      b.onclick = () => { cfg.fx[k] = !cfg.fx[k]; exKind = "fx"; exFx = k; exOff = !cfg.fx[k]; haptic(); render(); };
+      el.appendChild(b);
+    });
+  }
+  el.querySelectorAll(".am").forEach((b) => b.classList.toggle("on", !!cfg.fx[b.dataset.v]));
 }
 
 function render(full = true) {
@@ -1272,10 +1280,10 @@ let t0 = performance.now(), last = 0;
 const FREEZE = parseFloat(new URLSearchParams(location.search).get("t"));   // для проверки: ?t=5.6 — стоп-кадр
 function seek(sec) { if (typeof sec === "number") { t0 = performance.now() - sec * 1000; if (sec >= HOOK.end) { exOff = true; exSync(); } } }
 // авторский хук выбран — на главном экране его пример; любая другая настройка (субтитры, вставки…) возвращает живое превью
-let exOff = false, exKind = "hook";   // какой пример крутить сверху: хук или субтитры из разбора (что нажали последним)
+let exOff = false, exKind = "hook", exFx = "zoom";   // какой пример крутить сверху: хук или субтитры из разбора (что нажали последним)
 function exSync() {
   const vd = $("pvex");
-  const ex = exKind === "il" ? "il_" + cfg.ins.look : exKind === "ia" ? "ia_" + cfg.ins.anim :
+  const ex = exKind === "fx" ? "fx_" + exFx : exKind === "il" ? "il_" + cfg.ins.look : exKind === "ia" ? "ia_" + cfg.ins.anim :
     exKind === "ref" && cfg.sub.ref ? cfg.sub.ref : isExHook(cfg.hook) ? cfg.hook : cfg.sub.ref || null;
   const on = !!ex && !exOff;
   if (on) { const src = `ex_${ex}.mp4`; if (!vd.src.endsWith(src)) { vd.poster = `ex_${ex}.jpg`; vd.src = src; } vd.style.display = "block"; vd.muted = true; vd.play().catch(() => {}); }
@@ -1287,7 +1295,7 @@ function loop(now) {
     last = now;
     const t = isNaN(FREEZE) ? ((now - t0) / 1000) % DUR : FREEZE;
     $("cv").innerHTML = frame(t);
-    $("moment").textContent = "▶ " + ($("pvex").style.display === "block" ? (exKind === "il" || exKind === "ia" ? "вставка" : exKind === "ref" ? "субтитры" : "хук") : [...MOMENTS].reverse().find((m) => t >= m[0])[1]);
+    $("moment").textContent = "▶ " + ($("pvex").style.display === "block" ? (exKind === "il" || exKind === "ia" ? "вставка" : exKind === "fx" ? "фишка" : exKind === "ref" ? "субтитры" : "хук") : [...MOMENTS].reverse().find((m) => t >= m[0])[1]);
   }
   requestAnimationFrame(loop);
 }
