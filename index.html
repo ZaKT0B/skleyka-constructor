@@ -64,9 +64,9 @@
   /* субтитры из разбора (24.11): пока выбран такой стиль, обычные настройки субтитров приглушены */
   .refnote { display: none; color: var(--btn); }
   /* 24.11: карточки субтитров по три в ряд — пример крупно сверху, короткое имя снизу (длинные имена ломались по слогам) */
-  #subref .card.am, #hook .card.am, #look .card.am, #insanim .card.am, #fx .card.am { flex-direction: column; align-items: stretch; text-align: center; gap: 6px; padding: 6px; min-width: calc(33.3% - 6px); flex: 0 1 calc(33.3% - 6px); }
-  #subref .am .exv, #hook .am .exv, #look .am .exv, #insanim .am .exv, #fx .am .exv { width: 100%; height: auto; aspect-ratio: 9 / 16; }
-  #subref .am > div:last-child, #hook .am > div:last-child, #look .am > div:last-child, #insanim .am > div:last-child, #fx .am > div:last-child { font-size: 13px; line-height: 1.2; }
+  #subref .card.am, #hook .card.am, #look .card.am, #insanim .card.am, #fx .card.am, #topic .card.am { flex-direction: column; align-items: stretch; text-align: center; gap: 6px; padding: 6px; min-width: calc(33.3% - 6px); flex: 0 1 calc(33.3% - 6px); }
+  #subref .am .exv, #hook .am .exv, #look .am .exv, #insanim .am .exv, #fx .am .exv, #topic .am .exv { width: 100%; height: auto; aspect-ratio: 9 / 16; }
+  #subref .am > div:last-child, #hook .am > div:last-child, #look .am > div:last-child, #insanim .am > div:last-child, #fx .am > div:last-child, #topic .am > div:last-child { font-size: 13px; line-height: 1.2; }
   body.ref #refnote { display: block; }
   body.ref #s-sub > :not(h2):not(#refnote), body.ref #s-subanim > :not(h2) { opacity: .45; }
   /* авторский хук: на главном экране сверху крутится его пример (24.11, просьба Вадима) */
@@ -124,7 +124,8 @@
     <div class="lbl">Как появляется</div><div class="chips" id="insanim"></div>
   </div>
 
-  <div class="sec later" id="s-topic"><h2>🔀 Переходы на темы</h2><p class="h">Что происходит, когда в речи начинается новая мысль.</p><div class="chips" id="topic"></div></div>
+
+  <div class="sec" id="s-topic"><h2>🔀 Переходы на темы</h2><p class="h">Что происходит, когда в речи начинается новая мысль. Вспышка и карточки из «Фишек» работают на этих переходах.</p><div class="chips" id="topic"></div></div>
 
   <div class="sec" id="s-fx"><h2>✨ Фишки</h2><p class="h">Можно включить несколько. Нажми — включить и посмотреть пример сверху, нажми ещё раз — выключить.</p><div class="chips" id="fx"></div></div>
 
@@ -974,7 +975,7 @@ function render(full = true) {
   $("size").value = cfg.sub.size; $("sizev").textContent = Math.round(cfg.sub.size * 100) + " %";
   exCards($("look"), INSLOOK, () => cfg.ins.look, (v) => { cfg.ins.look = v; exKind = "il"; }, "il_");     // вставки — карточки с примером (24.11.2026)
   exCards($("insanim"), INSANIMC, () => cfg.ins.anim, (v) => { cfg.ins.anim = v; exKind = "ia"; }, "ia_");
-  chips($("topic"), TOPICS, () => cfg.topic, (v) => (cfg.topic = v), 5.3, true);
+  exCards($("topic"), TOPICS, () => cfg.topic, (v) => { cfg.topic = v; exKind = "tp"; }, "tp_");   // переходы — карточками с примером (25.11.2026)
   toggles();
   exSync();
   try { localStorage.setItem("skl_cs", JSON.stringify(cfg)); } catch (e) {}
@@ -1283,7 +1284,7 @@ function seek(sec) { if (typeof sec === "number") { t0 = performance.now() - sec
 let exOff = false, exKind = "hook", exFx = "zoom";   // какой пример крутить сверху: хук или субтитры из разбора (что нажали последним)
 function exSync() {
   const vd = $("pvex");
-  const ex = exKind === "fx" ? "fx_" + exFx : exKind === "il" ? "il_" + cfg.ins.look : exKind === "ia" ? "ia_" + cfg.ins.anim :
+  const ex = exKind === "fx" ? "fx_" + exFx : exKind === "tp" ? "tp_" + (cfg.topic || "hybrid") : exKind === "il" ? "il_" + cfg.ins.look : exKind === "ia" ? "ia_" + cfg.ins.anim :
     exKind === "ref" && cfg.sub.ref ? cfg.sub.ref : isExHook(cfg.hook) ? cfg.hook : cfg.sub.ref || null;
   const on = !!ex && !exOff;
   if (on) { const src = `ex_${ex}.mp4`; if (!vd.src.endsWith(src)) { vd.poster = `ex_${ex}.jpg`; vd.src = src; } vd.style.display = "block"; vd.muted = true; vd.play().catch(() => {}); }
@@ -1295,7 +1296,7 @@ function loop(now) {
     last = now;
     const t = isNaN(FREEZE) ? ((now - t0) / 1000) % DUR : FREEZE;
     $("cv").innerHTML = frame(t);
-    $("moment").textContent = "▶ " + ($("pvex").style.display === "block" ? (exKind === "il" || exKind === "ia" ? "вставка" : exKind === "fx" ? "фишка" : exKind === "ref" ? "субтитры" : "хук") : [...MOMENTS].reverse().find((m) => t >= m[0])[1]);
+    $("moment").textContent = "▶ " + ($("pvex").style.display === "block" ? (exKind === "il" || exKind === "ia" ? "вставка" : exKind === "fx" ? "фишка" : exKind === "tp" ? "переход" : exKind === "ref" ? "субтитры" : "хук") : [...MOMENTS].reverse().find((m) => t >= m[0])[1]);
   }
   requestAnimationFrame(loop);
 }
