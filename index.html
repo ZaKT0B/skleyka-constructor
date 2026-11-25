@@ -79,10 +79,13 @@
   #exbig video { width: min(78vw, 340px); aspect-ratio: 9 / 16; border-radius: 14px; background: #111; }
   #exbig div { color: #fff; font-size: 13px; opacity: .8; }
   pre.out { white-space: pre-wrap; word-break: break-all; font-size: 11px; background: var(--bg2); padding: 10px; border-radius: 12px; display: none; }
+  .tokb { position: fixed; top: 10px; right: 12px; z-index: 50; padding: 6px 11px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 80%, transparent);
+    border: 1.5px solid var(--btn); font-size: 13px; font-weight: 600; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; }
   .later { display: none !important; }   /* 24.11: пока только хуки и субтитры (Вадим) — остальное вернётся карточками */
 </style>
 </head>
 <body>
+<div class="tokb" id="tokb"></div>
 <div class="stage">
   <div class="phone" id="phone"><div class="canvas" id="cv"></div><video id="pvex" muted loop playsinline preload="none"></video></div>
   <div class="moment" id="moment"></div>
@@ -1330,13 +1333,20 @@ function send() {
   if (inTg) { try { tg.sendData(data); } catch (e) { tg.showAlert("Не получилось отправить: " + e.message); } }
   else { $("out").style.display = "block"; }
 }
+// гость по пробной ссылке (25.11.2026): бот передаёт баланс — справа вверху «🪙 N токена», кнопка «Выбрать этот стиль»
+const TOK = new URLSearchParams(location.search).get("tok");
+const PICK = TOK !== null ? "✅ Выбрать этот стиль" : "✅ Готово, монтировать так";
+if (TOK !== null) {
+  const n = parseInt(TOK, 10) || 0, w = n % 10 === 1 && n % 100 !== 11 ? "токен" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "токена" : "токенов";
+  $("tokb").textContent = `🪙 ${n} ${w}`; $("tokb").style.display = "block";
+}
 if (inTg) {
   tg.ready(); tg.expand();
   try { tg.setHeaderColor("bg_color"); } catch (e) {}
-  tg.MainButton.setParams({ text: "✅ Готово, монтировать так", is_visible: true });
+  tg.MainButton.setParams({ text: PICK, is_visible: true });
   tg.MainButton.onClick(send);
 } else {
-  $("send").style.display = "block"; $("send").onclick = send;
+  $("send").style.display = "block"; $("send").textContent = PICK; $("send").onclick = send;
 }
 render(); fit(); window.addEventListener("resize", fit);
 // шрифты превью грузятся по требованию: после загрузки пересчитать значки фишек
