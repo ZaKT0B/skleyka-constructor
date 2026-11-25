@@ -772,7 +772,9 @@ var AMLAY = (() => {
 </script>
 <script>
 const tg = window.Telegram && Telegram.WebApp;
-const inTg = !!(tg && tg.initData);
+// 25.11.2026: из кнопки нижней клавиатуры (только она умеет sendData) Telegram не даёт initData — раньше страница считала,
+// что открыта в браузере, и «Выбрать этот стиль» показывала текст настроек вместо отправки боту (гость Manana Admin)
+const inTg = !!(tg && (tg.initData || (tg.platform && tg.platform !== "unknown")));
 
 // ---------- варианты (имена = значения props.cs в Remotion, StyleConstructor.tsx) ----------
 const HOOKS = [
