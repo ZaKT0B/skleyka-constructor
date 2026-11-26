@@ -120,7 +120,9 @@
 
   <div class="sec" id="s-ins"><h2>🖼 Вставки</h2><p class="h">Твои фото и видео сбоку от лица. В примере стекло вместо фото. 3D-иконки всегда вырезаны, без рамки.</p>
     <div class="lbl">Как выглядит</div><div class="chips" id="look"></div>
-    <div class="lbl">Как появляется</div><div class="chips" id="insanim"></div>
+    <div class="lbl">Как появляется <span id="insn" style="opacity:.6"></span></div>
+    <p class="h">Выбери несколько вариантов: я буду чередовать их, чтобы вставки в ролике не повторялись. Несколько фото про одно и то же появятся вместе, каждое в своём месте (лучше всего в «Фотопространстве», «Ленте», «Карусели»).</p>
+    <div class="chips" id="insanim"></div>
   </div>
 
 
@@ -912,6 +914,8 @@ try {   // настройки из бота (прошлый свой стиль)
 } catch (e) {}
 cfg.sub = Object.assign({ ref: "", font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, cfg.sub || {});
 cfg.ins = Object.assign({ look: "frame", anim: "pop" }, cfg.ins || {});
+const normIns = () => { if (!Array.isArray(cfg.ins.anims) || !cfg.ins.anims.length) cfg.ins.anims = [cfg.ins.anim || "pop"]; };
+normIns();
 cfg.fx = cfg.fx || {};
 cfg.face = Object.assign({ sub: true, hook: true }, cfg.face || {});
 cfg.music = ["lib", "none", "own"].includes(cfg.music) ? cfg.music : "lib";
@@ -1018,7 +1022,9 @@ function render(full = true) {
   chips($("case"), CASES, () => cfg.sub.case, (v) => (cfg.sub.case = v), 2.6);
   $("size").value = cfg.sub.size; $("sizev").textContent = Math.round(cfg.sub.size * 100) + " %";
   exCards($("look"), INSLOOK, () => cfg.ins.look, (v) => { cfg.ins.look = v; exKind = "il"; }, "il_");     // вставки — карточки с примером (24.11.2026)
-  exCards($("insanim"), INSANIMC, () => cfg.ins.anim, (v) => { cfg.ins.anim = v; exKind = "ia"; }, "ia_");
+  normIns();
+  exCards($("insanim"), INSANIMC, () => cfg.ins.anims, insAnimPick, "ia_");
+  $("insn").textContent = cfg.ins.anims.length > 1 ? `· выбрано ${cfg.ins.anims.length}` : "· выбери несколько";
   exCards($("palette"), PALETTES, palOf, (v) => { const x = PALETTES.find((q) => q[0] === v); cfg.bg = x[3]; cfg.acc = x[4]; exKind = "cl"; }, "cl_");   // цвет — карточками (25.11.2026)
   exCards($("topic"), TOPICS, () => cfg.topic, (v) => { cfg.topic = v; exKind = "tp"; }, "tp_");   // переходы — карточками с примером (25.11.2026)
   toggles();
@@ -1175,7 +1181,14 @@ function exCards(el, list, get, pick, pre = "") {
       el.appendChild(b);
     });
   }
-  el.querySelectorAll(".am").forEach((b) => b.classList.toggle("on", get() === b.dataset.v));
+  el.querySelectorAll(".am").forEach((b) => { const g = get(); b.classList.toggle("on", Array.isArray(g) ? g.includes(b.dataset.v) : g === b.dataset.v); });
+}
+// появление вставок — можно несколько (26.11.2026): нажатие добавляет/убирает, хотя бы один остаётся; пример — нажатого
+function insAnimPick(v) {
+  const a = cfg.ins.anims, i = a.indexOf(v);
+  if (i < 0) a.push(v); else if (a.length > 1) a.splice(i, 1);
+  cfg.ins.anim = a.includes(v) ? v : a[0];
+  exKind = "ia";
 }
 function amChips() {
   const el = $("hookam");
