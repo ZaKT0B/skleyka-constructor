@@ -134,6 +134,8 @@
 
   <div class="sec" id="s-fx"><h2>✨ Фишки</h2><p class="h">Можно включить несколько. Нажми — включить и посмотреть пример сверху, нажми ещё раз — выключить.</p><div class="chips" id="fx"></div></div>
 
+  <div class="sec" id="s-face"><h2>🙂 Защита лица</h2><p class="h">Включено — текст обходит лицо: уходит под подбородок или над головой. Выключи, если не страшно закрыть лицо. Хуку часто можно и закрыть.</p><div class="chips" id="face"></div></div>
+
   <div class="sec" id="s-music"><h2>🎵 Музыка</h2><p class="h">Музыка всегда тише голоса.</p><div class="chips" id="music"></div></div>
 
   <pre class="out" id="out"></pre>
@@ -911,6 +913,7 @@ try {   // настройки из бота (прошлый свой стиль)
 cfg.sub = Object.assign({ ref: "", font: "sf", anim: "one", case: "lower", size: 1, color: "#F7F2E8" }, cfg.sub || {});
 cfg.ins = Object.assign({ look: "frame", anim: "pop" }, cfg.ins || {});
 cfg.fx = cfg.fx || {};
+cfg.face = Object.assign({ sub: true, hook: true }, cfg.face || {});
 cfg.music = ["lib", "none", "own"].includes(cfg.music) ? cfg.music : "lib";
 cfg.hw = cfg.hw || "long"; cfg.hpos = cfg.hpos || "top";
 
@@ -977,6 +980,21 @@ function toggles() {
   el.querySelectorAll(".am").forEach((b) => b.classList.toggle("on", !!cfg.fx[b.dataset.v]));
 }
 
+// защита лица отдельно для субтитров и хука (26.11.2026, Вадим: «на хук часто можно не включать»): включено по умолчанию, выбор за человеком
+const FACE = [["sub", "💬 Субтитры не закрывают лицо"], ["hook", "🪝 Хук не закрывает лицо"]];
+function faceToggles() {
+  const el = $("face"); el.innerHTML = "";
+  cfg.face = Object.assign({ sub: true, hook: true }, cfg.face || {});
+  FACE.forEach(([k, name]) => {
+    const b = document.createElement("button");
+    const on = cfg.face[k] !== false;
+    b.className = "chip card" + (on ? " on" : "");
+    b.innerHTML = name + `<small>${on ? "включено" : "выключено — может лечь на лицо"}</small>`;
+    b.onclick = () => { cfg.face[k] = !on; haptic(); render(); };
+    el.appendChild(b);
+  });
+}
+
 function render(full = true) {
   const pr = $("presets"); pr.innerHTML = "";
   PRESETS.forEach(([name, hint, c]) => {
@@ -1004,6 +1022,7 @@ function render(full = true) {
   exCards($("palette"), PALETTES, palOf, (v) => { const x = PALETTES.find((q) => q[0] === v); cfg.bg = x[3]; cfg.acc = x[4]; exKind = "cl"; }, "cl_");   // цвет — карточками (25.11.2026)
   exCards($("topic"), TOPICS, () => cfg.topic, (v) => { cfg.topic = v; exKind = "tp"; }, "tp_");   // переходы — карточками с примером (25.11.2026)
   toggles();
+  faceToggles();
   chips($("music"), MUSIC, () => cfg.music, (v) => (cfg.music = v), undefined, true);
   exSync();
   try { localStorage.setItem("skl_cs", JSON.stringify(cfg)); } catch (e) {}
