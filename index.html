@@ -68,6 +68,7 @@
   #subref .am .exv, #hook .am .exv, #look .am .exv, #insanim .am .exv, #fx .am .exv, #topic .am .exv { width: 100%; height: auto; aspect-ratio: 9 / 16; }
   #subref .am > div:last-child, #hook .am > div:last-child, #look .am > div:last-child, #insanim .am > div:last-child, #fx .am > div:last-child, #topic .am > div:last-child { font-size: 13px; line-height: 1.2; }
   body.ref #refnote { display: block; }
+  body.subsoff #subref { opacity: .35; pointer-events: none; }   /* «без субтитров» (Вероника 27.11.2026) */
   body.ref #s-sub > :not(h2):not(#refnote), body.ref #s-subanim > :not(h2) { opacity: .45; }
   /* авторский хук: на главном экране сверху крутится его пример (24.11, просьба Вадима) */
   #pvex { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; background: #000; }
@@ -105,6 +106,7 @@
   </div>
 
   <div class="sec" id="s-ref"><h2>💬 Субтитры</h2><p class="h">Нажми — пример крутится сверху. Нажми ещё раз — снять.</p>
+    <div class="chips" id="subonoff"></div>
     <div class="chips" id="subref"></div></div>
 
   <div class="sec later" id="s-sub"><h2>💬 Субтитры</h2><p class="h refnote" id="refnote">Сейчас выбран стиль из разбора — настройки ниже не действуют. Выбери любой шрифт или появление, чтобы вернуться к своим.</p><p class="h">Обычные пишутся одним шрифтом. В паре главные слова набраны вторым шрифтом.</p>
@@ -986,6 +988,18 @@ function toggles() {
 
 // защита лица отдельно для субтитров и хука (26.11.2026, Вадим: «на хук часто можно не включать»): включено по умолчанию, выбор за человеком
 const FACE = [["sub", "💬 Субтитры не закрывают лицо"], ["hook", "🪝 Хук не закрывает лицо"]];
+// субтитры в ролике: есть / нет (Вероника 27.11.2026: «можно ли просто убрать субтитры»)
+function subOnOff() {
+  const el = $("subonoff"); el.innerHTML = "";
+  [[false, "💬 С субтитрами"], [true, "🚫 Без субтитров"]].forEach(([v, name]) => {
+    const b = document.createElement("button");
+    b.className = "chip" + (!!cfg.sub.off === v ? " on" : "");
+    b.textContent = name;
+    b.onclick = () => { cfg.sub.off = v; haptic(); render(); seek(2.2); };
+    el.appendChild(b);
+  });
+  document.body.classList.toggle("subsoff", !!cfg.sub.off);
+}
 function faceToggles() {
   const el = $("face"); el.innerHTML = "";
   cfg.face = Object.assign({ sub: true, hook: true }, cfg.face || {});
@@ -1029,6 +1043,7 @@ function render(full = true) {
   exCards($("topic"), TOPICS, () => cfg.topic, (v) => { cfg.topic = v; exKind = "tp"; }, "tp_");   // переходы — карточками с примером (25.11.2026)
   toggles();
   faceToggles();
+  subOnOff();
   chips($("music"), MUSIC, () => cfg.music, (v) => (cfg.music = v), undefined, true);
   exSync();
   try { localStorage.setItem("skl_cs", JSON.stringify(cfg)); } catch (e) {}
@@ -1329,7 +1344,7 @@ function frame(t) {
   if (seg && !bgSeg && seg.kind !== "plate" && !AMLAY.isAm(seg.kind)) h += `<div style="position:absolute;left:0;right:0;top:0;height:900px;background:linear-gradient(rgba(0,0,0,.42),rgba(0,0,0,0));opacity:${Math.min(ease((t - seg.s) / .3), ease((seg.e - t) / .3))}"></div>`;
   if (am) h += amHtml(am, t, "pv", (f) => f === "neg" ? `<div style="position:absolute;inset:0;filter:invert(1);transform:scale(${z});transform-origin:50% 48%">${PERSON}</div>` : AMPHOTO);
   else if (seg) h += segText(seg.kind, seg.lead, seg.title, t - seg.s, seg.e, BG, ACC, t);
-  if (!(seg && (["hybrid", "white", "ladder", "hand", "type"].includes(seg.kind) || AMLAY.isAm(seg.kind)))) { const sb = subs(t, ACC); if (sb) h += SUBZ_LINE + sb; }
+  if (!cfg.sub.off && !(seg && (["hybrid", "white", "ladder", "hand", "type"].includes(seg.kind) || AMLAY.isAm(seg.kind)))) { const sb = subs(t, ACC); if (sb) h += SUBZ_LINE + sb; }
   if (!bgSeg) h += insert(t);
   if (fx.emoji && t > .9 && t < HOOK.end) h += `<div style="position:absolute;left:470px;top:1330px;font-size:140px;transform:scale(${backE((t - .9) / .35)})">${HOOK.emoji}</div>`;
   if (fx.flash && cfg.topic !== "none" && Math.abs(t - TOPIC.at) < .22) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${.85 * (1 - Math.abs(t - TOPIC.at) / .22)}"></div>`;
